@@ -79,7 +79,7 @@ class MecanumDrive:
             x_control = x_pid.calculate(self.position[0], self.target_position[0])
             y_control = y_pid.calculate(self.position[1], self.target_position[1])
             rot_control = rot_pid.calculate(self.position[2], self.target_position[2])
-            calculated_speeds = self.calculate_mecanum_drive_speeds(x_control, y_control, rot_control)
+            calculated_speeds = self.calculate_mecanum_drive_speeds(y_control, x_control, rot_control)
             self.set_target_wheel_speeds(calculated_speeds)
 
     def set_target_wheel_speeds(self, target_speeds):
