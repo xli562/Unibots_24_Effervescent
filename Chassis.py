@@ -43,7 +43,7 @@ class MecanumDrive:
         self.wheel_speeds = {'front_left': 0, 'front_right': 0, 'back_left': 0, 'back_right': 0}
         self.target_wheel_speeds = {'front_left': 0, 'front_right': 0, 'back_left': 0, 'back_right': 0}
 
-        """X. Y and Rot"""
+        """X. Y (Traditional Cartesian Definition) and Rot (Clockwise +ve)"""
         self.position = [0, 0, 0]
         self.target_position = [0, 0, 0]
 
