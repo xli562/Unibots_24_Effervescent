@@ -1,0 +1,32 @@
+*** UniBots 2024 electronics & programming log ***
+
+
+Mon. 2023/03/11
+    - 电机驱动板插电机的时候用手把接口扶住，要不接口会弯。
+    - 下地测试机器人后重新上机导致的无法识别驱动板可以通过重新拔插驱动板的USB连接解决。
+    - Motor[1, 2, 3, 4] = [左前, 左后, 右前, 右后]，且麦轮摆成凸四边形状时，x轴为向前，y轴为向右，z轴为逆时针（俯视）。
+    - x、y轴不直，需要校准。
+    - 下次来之前列一个todo，提高工作效率。
+
+
+Thur. 2024/03/07
+    - Motor & encoder
+        - Use code as sample in Sample_codes/8.car_motion.ipynb to run motor. PID included.
+    - Lidar
+        - 长的type-C转A USB线用不了。
+        - 每次重启Jetson后
+            - 检查是否有与lidar的usb连接
+            - 接上lidar的电源线和数据线
+            - 在Jetson的最底层菜单打开terminal
+            - cd /dev
+            - ls
+            - 在返回的list中找ttyACM*或者ttyUSB*，若有则连接成功。目前除了损坏的USB线之外未遇到其他接上不识别设备的情况
+        - 改usb设备权限（设备名称按情况修改）
+            - sudo chmod 777 /dev/ttyUSB*
+    - 库与代码
+        - 库
+            - 暂时放在桌面的/sdk文件夹中
+            - 【需要写接口或类似接口的方式让python能够调用】
+        - 示例代码
+            - 在/sdk/samples中
+            - 此次将blocking_test.cpp与non-blocking_test.cpp中的‘ttyUSB0’改成了‘ttyACM0’。若/dev中的USB名称有变视情况修改。
