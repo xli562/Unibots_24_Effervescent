@@ -64,9 +64,17 @@ class Servo():
     
     def __init__(self, port):
         self._port = port
+        self._position = 0   # target angular position of servo
     
     def set_position(self, degrees):
         """ Rotate the servo to specified angular position. """
+        # Ensure degrees is within 0 to 180
+        degrees = max(0, min(180, degrees))
+        bot.set_pwm_servo(self._port, degrees)
+        self._position = degrees
+
+    def get_position(self) -> int:
+        return self._position
 
     def grip(self):
         """ Grip a mini rugby. """
@@ -146,13 +154,41 @@ class MecanumDrive:
         """Returns the current position of the robot. (Need readings from IMU through Serial)"""
         return self.position
 
-motor_test = Motor(0)
-motor_test.set_pid_coefficient(1, 0, 0)
-motor_test.update_position(0)
-motor_test.set(50)
-time.sleep(3)
-motor_test.set(0)
-motor_test.set(-50)
-time.sleep(3)
-motor_test.set(0)
+def test_motor():
+    """ Test basic motor functionalities """
+    motor_test = Motor(0)
+    motor_test.set_pid_coefficient(1, 0, 0)
+    motor_test.update_position(0)
+    motor_test.set(50)
+    time.sleep(3)
+    motor_test.set(0)
+    motor_test.set(-50)
+    time.sleep(3)
+    motor_test.set(0)
 
+def test_servo():
+    """ test basic servo functions """
+    servo = Servo(1)
+    print(servo.get_position())
+
+    servo.set_position(90)
+    print(servo.get_position())
+    time.sleep(2)
+    print(servo.get_position())
+
+    servo.set_position(0)
+    print(servo.get_position())
+    time.sleep(2)
+    print(servo.get_position())
+
+    servo.set_position(180)
+    print(servo.get_position())
+    time.sleep(2)
+    print(servo.get_position())
+
+    servo.set_position(90)
+    print(servo.get_position())
+    time.sleep(2)
+    print(servo.get_position())
+
+test_servo()
