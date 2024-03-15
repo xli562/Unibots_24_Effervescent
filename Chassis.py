@@ -25,12 +25,13 @@ class Motor:
         """Sets the motor's power, with an option to reverse direction."""
         """Power range from -100 to 100 """
         self.output_power = -power if reverse else power
+        print(motor_velocity_array, self.port)
         motor_velocity_array[self.port] = self.output_power
         bot.set_motor(motor_velocity_array[0], motor_velocity_array[1], motor_velocity_array[2], motor_velocity_array[3])
 
     def update_position(self, position):
         """Updates the motor's position (acquiring from bot)"""
-        encoder_readings = bot.get_motor_encoder
+        encoder_readings = bot.get_motor_encoder()
         position = encoder_readings[self.port]
         self.position = position
 
@@ -124,7 +125,7 @@ class MecanumDrive:
 
 motor_test = Motor(0)
 motor_test.set_pid_coefficient(1, 0, 0)
-motor_test.update_position()
+motor_test.update_position(0)
 motor_test.set(50)
 time.delay(3)
 motor_test.set(0)
