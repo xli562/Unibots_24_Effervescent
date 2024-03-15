@@ -3,7 +3,9 @@
 
 Fri. 2024/03/15
     Stepper interface
-        - Default pwm period from rosmaster board is 20ms
+        - From oscilloscope observations:
+            - Default pwm period from rosmaster board is 20ms
+            - PWM waveform and percentage remains the same until another set_position() is called.
         - Observed that servo only responds to set_angle between 22 deg and 161 deg
 
     Work folder cleanup
