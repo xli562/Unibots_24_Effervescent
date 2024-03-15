@@ -171,10 +171,9 @@ def test_servo():
     servo = Servo(1)
     print(servo.get_position())
 
-    for i in range(0,180,20):
-        servo.set_position(i)
-        time.sleep(0.5)
-        print(servo.get_position())
+    i = int(input())
+    servo.set_position(i)
+    print(servo.get_position())
 
 
 test_servo()
