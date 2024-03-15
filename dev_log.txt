@@ -1,7 +1,47 @@
 *** UniBots 2024 electronics & programming log ***
 
 
-Mon. 2023/03/11
+Fri. 2024/03/15
+    Work folder cleanup
+    - All base-level sub-functions (eg. lidar, motor drive positioning, gpio etc.) are placed in subsequent folders named lidar_modules_HARRY etc. 
+    - This does not mean all code inside are _modules_. I just put everything relevant to base-level lidar interfacing into that folder.
+    - Anyone can contribute and modify files inside any module folder. Just add "(Max)" or similar, in the commit message.
+
+    TODO:
+        - 测试rosmaster是否能驱动电机
+        - 使用命令行方法同步上传git，并将所需代码放在sync_git.sh（或类似）文件中，每次上传代码时执行。
+        - 【主要任务】校准电机
+        - 确定避障方案，从而确定超声波传感器的摆放位置。
+        - Harry写lidar api
+
+    Errors and resolving errors
+        - ModuleNotFoundError: ensure you’re in the venv and using python3.10 in the venv as the interpreter.
+
+
+Thur. 2024/03/14
+    TODO:
+        - code文件夹与git同步
+        - 校准电机
+        - 确定避障方案，从而确定超声波传感器的摆放位置。
+        - Harry写lidar api
+    Setup python environment：
+        - Download python 3.10.6 from python.org, decompress into folder. Bash on the folder.
+        - Bash ‘sudo apt upgrade’
+        - Bash ‘sudo apt install build-essential zlib1g-dev libncurses5-dev libgdbm-dev libnss3-dev libssl-dev libreadline-dev libffi-dev wget’
+        - Bash ‘./configure --enable-optimizations’
+        - Bash ‘sudo make altinstall’
+        - alternative method: 存疑 -> (System has python 2.7 and python 3.6. Run sudo apt-get install python3.10 to install python 3.10. This way, Python 2.7, 3.6 and 3.10 will coexist in the system. ‘python’ would give python2.7, ‘python3’ or ‘python3.6’ will give python 3.6, and ‘python3.10’ will give python3.10. Then run ‘python3.10 -m venv effenv‘ to create virtual environment in a folder. Then activate the venv and install packages with pip.)
+        - Code IDE installation:
+            - Go to https://jetsonhacks.com/2019/10/01/jetson-nano-visual-studio-code-python/
+            - Download https://github.com/toolboc/vscode/releases/download/1.32.3/code-oss_1.32.3-arm64.deb
+            - Bash ‘sudo pkg -i code-oss_1.32.3-arm64.deb’
+            - Should be completed
+            - Bash ‘code-oss’ to start Code OSS.
+        - Rosmaster installation
+            - Follow tutorial, py_install is in the BaiduNetDisk, but don’t install using sudo! Instead activate the venv and install WITHOUT the sudo. Everything else is the same as in the tutorial.
+
+
+Mon. 2024/03/11
     - 电机驱动板插电机的时候用手把接口扶住，要不接口会弯。
     - 下地测试机器人后重新上机导致的无法识别驱动板可以通过重新拔插驱动板的USB连接解决。
     - Motor[1, 2, 3, 4] = [左前, 左后, 右前, 右后]，且麦轮摆成凸四边形状时，x轴为向前，y轴为向右，z轴为逆时针（俯视）。
