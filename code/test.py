@@ -19,7 +19,7 @@ bot.create_receive_threading()
 enable = True
 bot.set_auto_report_state(enable, forever=False)
 
-speed_x = -1
+speed_x = 5
 speed_y = 0
 speed_z = 5
 
