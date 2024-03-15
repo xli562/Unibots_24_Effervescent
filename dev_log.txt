@@ -2,11 +2,14 @@
 
 
 Fri. 2024/03/15
+    Stepper interface
+        - Default pwm period from rosmaster board is 20ms
+
     Work folder cleanup
-    - All base-level sub-functions (eg. lidar, motor drive positioning, gpio etc.) are placed in subsequent folders named lidar_modules_HARRY etc. 
-    - This does not mean all code inside are _modules_. I just put everything relevant to base-level lidar interfacing into that folder.
-    - Anyone can contribute and modify files inside any module folder. Just add "(Max)" or similar, in the commit message.
-    - ** When a python file in /xx_modules need to import from /yy_modules, there will likely be an import issue. In this case, please consult ChatGPT. An alternative method would be to put all modules in a single folder '/modules' . Another alternative is to branch and develop separate functionalities in different branches under the same folder, then merging them. Then it is important not to modify the shared funcionalities too much. **
+        - All base-level sub-functions (eg. lidar, motor drive positioning, gpio etc.) are placed in subsequent folders named lidar_modules_HARRY etc. 
+        - This does not mean all code inside are _modules_. I just put everything relevant to base-level lidar interfacing into that folder.
+        - Anyone can contribute and modify files inside any module folder. Just add "(Max)" or similar, in the commit message.
+        - ** When a python file in /xx_modules need to import from /yy_modules, there will likely be an import issue. In this case, please consult ChatGPT. An alternative method would be to put all modules in a single folder '/modules' . Another alternative is to branch and develop separate functionalities in different branches under the same folder, then merging them. Then it is important not to modify the shared funcionalities too much. **
 
     TODO:
         - 测试rosmaster是否能驱动电机
