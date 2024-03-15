@@ -1,5 +1,14 @@
 import Constants
 import PIDController
+import time
+from RosmasterBoard import Rosmaster
+
+motor_velocity_array = [] # Not actual velocity of the wheel
+
+bot = Rosmaster()
+bot.create_receive_threading()
+# Enables auto data sending, and meant to be temporary (not forever)
+bot.set_auto_report_state(enable = True, forever = False)
 
 class Motor:
     def __init__(self, port):
@@ -8,22 +17,35 @@ class Motor:
         self.output_power = 0
         self.position = 0
         self.tolerance = 1
+        self.kP = 1
+        self.kI = 0
+        self.kD = 0
 
     def set(self, power, reverse=False):
         """Sets the motor's power, with an option to reverse direction."""
+        """Power range from -100 to 100 """
         self.output_power = -power if reverse else power
+        motor_velocity_array[self.port] = self.output_power
+        bot.set_motor(motor_velocity_array[0], motor_velocity_array[1], motor_velocity_array[2], motor_velocity_array[3])
 
-    def update_position(self):
-        """Updates the motor's position (acquiring from Serial)"""
-        return 0
+    def update_position(self, position):
+        """Updates the motor's position (acquiring from bot)"""
+        encoder_readings = bot.get_motor_encoder
+        position = encoder_readings[self.port]
+        self.position = position
 
     def set_free_drive(self):
         """Sets the motor to free drive mode."""
         self.set(0)
 
+    def set_pid_coefficient(self, kP, kI, kD):
+        self.kP = kP
+        self.kI = kI
+        self.kD = kD
+
     def set_position(self, target_position):
         """Moves the motor to a specific position using PID control."""
-        position_pid = PIDController(1, 0, 0)
+        position_pid = PIDController(self.kP, self.kI, self.kD)
         while not(abs(target_position - self.position) < self.tolerance):
             self.update_position()  # Update positional readings of the motor
             self.set(position_pid.calculate(self.position, target_position))
@@ -92,10 +114,21 @@ class MecanumDrive:
         """Returns the current speeds of the wheels."""
         return self.wheel_speeds
 
-    def set_current_position(self, set_position):
+    def set_current_chassis_position(self, set_position):
         """Sets the current position of the robot."""
         self.position = set_position
 
-    def get_current_position(self):
+    def get_current_chassis_position(self):
         """Returns the current position of the robot. (Need readings from IMU through Serial)"""
         return self.position
+
+motor_test = Motor(0)
+motor_test.set_pid_coefficient(1, 0, 0)
+motor_test.update_position()
+motor_test.set(50)
+time.delay(3)
+motor_test.set(0)
+motor_test.set(-50)
+time.delay(3)
+motor_test.set(0)
+
