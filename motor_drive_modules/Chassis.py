@@ -70,7 +70,7 @@ class Servo():
         """ Rotate the servo to specified angular position. """
         # Ensure degrees is within 0 to 180
         degrees = max(0, min(180, degrees))
-        bot.set_pwm_servo(self._port, degrees)
+        bot.set_pwm_servo_all(self._port, degrees)
         self._position = degrees
 
     def get_position(self) -> int:
