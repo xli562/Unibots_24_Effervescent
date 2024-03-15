@@ -5,7 +5,7 @@ from RosmasterBoard import Rosmaster
 
 # global array to store motor velocity
 # N.B. Actual velocity of the wheel is this times a constant
-motor_velocity_array = []
+motor_velocity_array = [0,0,0,0]
 
 bot = Rosmaster()
 bot.create_receive_threading()
