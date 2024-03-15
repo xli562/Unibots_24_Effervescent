@@ -3,34 +3,37 @@ import PIDController
 import time
 from RosmasterBoard import Rosmaster
 
-motor_velocity_array = [] # Not actual velocity of the wheel
+# global array to store motor velocity
+# N.B. Actual velocity of the wheel is this times a constant
+motor_velocity_array = []
 
 bot = Rosmaster()
 bot.create_receive_threading()
-# Enables auto data sending, and meant to be temporary (not forever)
+# Enable auto data sending, and meant to be temporary (not forever)
 bot.set_auto_report_state(enable = True, forever = False)
 
 class Motor:
     def __init__(self, port):
-        """Initializes the motor on the given port."""
-        self.port = port
-        self.output_power = 0
-        self.position = 0
+        """ Initializes the motor on the given port. """
+        self.port = port    # port of the motor
+        self.output_power = 0   # output pwr, determines pwm ratio
+        self.position = 0   # position of encoder
         self.tolerance = 1
+        # PID parameters
         self.kP = 1
         self.kI = 0
         self.kD = 0
 
     def set(self, power, reverse=False):
-        """Sets the motor's power, with an option to reverse direction."""
-        """Power range from -100 to 100 """
+        """ Sets the motor's drive power, with an option to reverse direction. """
+        """ Power range from -100 to 100 """
         self.output_power = -power if reverse else power
         print(motor_velocity_array, self.port)
         motor_velocity_array[self.port] = self.output_power
         bot.set_motor(motor_velocity_array[0], motor_velocity_array[1], motor_velocity_array[2], motor_velocity_array[3])
 
     def update_position(self, position):
-        """Updates the motor's position (acquiring from bot)"""
+        """ Updates the motor's position (acquiring from bot) """
         encoder_readings = bot.get_motor_encoder()
         position = encoder_readings[self.port]
         self.position = position
@@ -45,14 +48,14 @@ class Motor:
         self.kD = kD
 
     def set_position(self, target_position):
-        """Moves the motor to a specific position using PID control."""
+        """ Moves the motor to a specific position using PID control. """
         position_pid = PIDController(self.kP, self.kI, self.kD)
         while not(abs(target_position - self.position) < self.tolerance):
             self.update_position()  # Update positional readings of the motor
             self.set(position_pid.calculate(self.position, target_position))
 
     def set_brake(self):
-        """Sets the motor to brake mode."""
+        """ Sets the motor to brake mode. """
         self.set_position(self.position)
 
 
@@ -75,7 +78,7 @@ class MecanumDrive:
         self.rot_tolerance = 1
 
     def calculate_mecanum_drive_speeds(self, forward_speed, strafe_speed, rotate_speed):
-        """Calculates wheel speeds for the mecanum drive system."""
+        """ Calculates wheel speeds for the mecanum drive system. """
         calculated_wheel_speeds = {'front_left': forward_speed + strafe_speed + rotate_speed,
                                   'front_right': forward_speed - strafe_speed - rotate_speed,
                                   'back_left': forward_speed - strafe_speed + rotate_speed,
@@ -87,7 +90,7 @@ class MecanumDrive:
         return calculated_wheel_speeds
 
     def update_motor_positions(self):
-        """Updates the positions of all motors."""
+        """ Updates the positions of all motors. """
         for motor in [self.front_left_wheel, self.front_right_wheel, self.back_left_wheel, self.back_right_wheel]:
             motor.update_position()
 
