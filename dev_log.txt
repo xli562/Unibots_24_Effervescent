@@ -4,6 +4,7 @@
 Fri. 2024/03/15
     Stepper interface
         - Default pwm period from rosmaster board is 20ms
+        - Observed that servo only responds to set_angle between 22 deg and 161 deg
 
     Work folder cleanup
         - All base-level sub-functions (eg. lidar, motor drive positioning, gpio etc.) are placed in subsequent folders named lidar_modules_HARRY etc. 

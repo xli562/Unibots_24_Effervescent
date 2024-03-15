@@ -68,8 +68,8 @@ class Servo():
     
     def set_position(self, degrees):
         """ Rotate the servo to specified angular position. """
-        # Ensure degrees is within 0 to 180
-        degrees = max(0, min(180, degrees))
+        # Ensure degrees is within 22 to 161 for the IDP servos
+        degrees = max(22, min(161, degrees))
         bot.set_pwm_servo_all(degrees, degrees, degrees, degrees)
         self._position = degrees
 
