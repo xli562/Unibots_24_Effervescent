@@ -1,5 +1,5 @@
 import Constants
-import PIDController
+from PIDController import PIDController
 import time
 from RosmasterBoard import Rosmaster
 import matplotlib.pyplot as plt
@@ -35,7 +35,7 @@ class Motor:
         motor_velocity_array[self.port] = self.output_power
         bot.set_motor(motor_velocity_array[0], motor_velocity_array[1], motor_velocity_array[2], motor_velocity_array[3])
 
-    def update_position(self, position):
+    def update_position(self):
         """ Updates the motor's position (acquiring from bot) """
         encoder_readings = bot.get_motor_encoder()
         position = encoder_readings[self.port]
@@ -189,13 +189,9 @@ start_time = time.time()
 
 fig, ax = plt.subplots()
 
+motor_test.set_position(5000)
 ani = FuncAnimation(fig, update, interval=100)  # Update every 100 ms
 plt.show()
-while True:
-    motor_test.set_position(5000)
-    time.delay(5)
-    motor_test.set_position(10000)
-    time.delay(5)
 
 # def test_servo():
 #     """ test basic servo functions """
