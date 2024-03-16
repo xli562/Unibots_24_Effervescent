@@ -1,6 +1,12 @@
 *** UniBots 2024 electronics & programming log ***
 
 
+Sat. 2024/03/16
+    Gripper
+        - If gripping is performed when rugby is not 'horizontal' and directly against the robot, grippers may not be able to close fully, and the robot / the servo might lift off their supports.
+        - If rugby is not aligned with centerline of the robot, gripping might be loose.
+
+
 Fri. 2024/03/15
     Stepper interface
         - From oscilloscope observations:
