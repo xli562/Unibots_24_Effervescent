@@ -222,23 +222,19 @@ motor_2.set_pid_coefficient(0.8, 5, 6)
 motor_3.set_pid_coefficient(0.8, 5, 6)
 
 threads = []
-motor_list = [motor_0, motor_1, motor_2, motor_3]
+motors = [motor_0, motor_1, motor_2, motor_3]
 
-for motor in motor_list:
-    thread = threading.Thread(target=motor.set_position, args=5000)
-    threads.append(thread)
-    thread.start()
+def set_motor_positions(positions):
+    threads = []
+    for motor, position in zip(motors, positions):
+        thread = threading.Thread(target=motor.set_position, args=(position,))
+        thread.append(thread)
+        thread.start()
+    for thread in threads:
+        thread.join()
 
-for thread in threads:
-    thread.join()
-
-for motor in motor_list:
-    thread = threading.Thread(target=motor.set_position, args=0)
-    threads.append(thread)
-    thread.start()
-
-for thread in threads:
-    thread.join()
+set_motor_positions([5000, 5000, 5000, 5000])
+set_motor_positions([0, 0, 0, 0])
 
 # def test_servo():
 #     """ test basic servo functions """
