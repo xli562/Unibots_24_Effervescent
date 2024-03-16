@@ -1,6 +1,7 @@
 import signal
 import time
 import sys
+import ordlidar
 
 # Handler for signal interruption (SIGINT)
 def sig_handle(signo, frame):
