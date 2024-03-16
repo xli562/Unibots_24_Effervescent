@@ -65,12 +65,17 @@ class Servo():
     def __init__(self, port):
         self._port = port
         self._position = 0   # target angular position of servo
+        self._grip_position = 150
+        self._release_position = 27
+        self._min_responsive_pos = 23
+        self._max_responsive_pos = 160
     
-    def set_position(self, degrees):
-        """ Rotate the servo to specified angular position. """
-        # Ensure degrees is within 22 to 161 for the IDP servos
-        degrees = max(22, min(161, degrees))
-        bot.set_pwm_servo_all(degrees, degrees, degrees, degrees)
+    def set_position(self, degrees:int):
+        """ Rotate the servo to specified angular position. 
+        Position must be an integer, as specified by Rosmaster_Lib"""
+        # Limit the input between min and max angles, beyond which the IDP servos will not move.
+        degrees = max(self._min_responsive_pos, min(self._max_responsive_pos, degrees))
+        bot.set_pwm_servo(1, degrees)
         self._position = degrees
 
     def get_position(self) -> int:
@@ -79,12 +84,12 @@ class Servo():
     def grip(self):
         """ Grip a mini rugby. """
         ''' TODO: Calibration '''
-        pass
+        self.set_position(self._grip_position)
 
     def release(self):
         """ Release a mini rugby. """
         ''' TODO: Calibration '''
-        pass
+        self.set_position(self._release_position)
 
 
 class MecanumDrive:
@@ -170,10 +175,11 @@ def test_servo():
     """ test basic servo functions """
     servo = Servo(1)
     print(servo.get_position())
-
-    i = int(input())
-    servo.set_position(i)
-    print(servo.get_position())
+    while 1:
+        servo.grip()
+        time.sleep(1)
+        servo.release()
+        time.sleep(1)
 
 
 test_servo()
