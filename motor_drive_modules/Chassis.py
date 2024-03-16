@@ -2,6 +2,9 @@ import Constants
 import PIDController
 import time
 from RosmasterBoard import Rosmaster
+import matplotlib.pyplot as plt
+from matplotlib.animation import FuncAnimation
+import numpy as np
 
 # global array to store motor velocity
 # N.B. Actual velocity of the wheel is this times a constant
@@ -159,6 +162,7 @@ class MecanumDrive:
         """Returns the current position of the robot. (Need readings from IMU through Serial)"""
         return self.position
 
+<<<<<<< Updated upstream:motor_drive_modules/Chassis.py
 def test_motor():
     """ Test basic motor functionalities """
     motor_test = Motor(0)
@@ -170,6 +174,42 @@ def test_motor():
     motor_test.set(-50)
     time.sleep(3)
     motor_test.set(0)
+=======
+motor_test = Motor(0)
+motor_test.set_pid_coefficient(1, 0, 0)
+
+# Function to update the plot
+def update(frame):
+    global prev_reading
+    current_reading = motor_test.update_position()
+    velocity = current_reading - prev_reading  # Calculate velocity
+    prev_reading = current_reading
+    
+    times.append(time.time() - start_time)  # Update time
+    velocities.append(velocity)  # Update velocity
+    
+    ax.clear()
+    ax.plot(times, velocities)
+    ax.set_xlabel('Time (s)')
+    ax.set_ylabel('Velocity')
+    plt.title('Wheel Velocity Over Time')
+
+# Initial setup
+prev_reading = motor_test.update_position()
+times = [0]  # Store times
+velocities = [0]  # Store velocities
+start_time = time.time()
+
+fig, ax = plt.subplots()
+
+ani = FuncAnimation(fig, update, interval=100)  # Update every 100 ms
+plt.show()
+while True:
+    motor_test.set_position(5000)
+    time.delay(5)
+    motor_test.set_position(10000)
+    time.delay(5)
+>>>>>>> Stashed changes:Chassis.py
 
 def test_servo():
     """ test basic servo functions """
