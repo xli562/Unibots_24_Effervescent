@@ -21,11 +21,12 @@ class Motor:
         self.port = port    # port of the motor
         self.output_power = 0   # output pwr, determines pwm ratio
         self.position = 0   # position of encoder
-        self.tolerance = 1
+        self.tolerance = 10
         # PID parameters
         self.kP = 1
         self.kI = 0
         self.kD = 0
+        self.position = self.update_position()
 
     def set(self, power, reverse=False):
         """ Sets the motor's drive power, with an option to reverse direction. """
@@ -39,6 +40,7 @@ class Motor:
         encoder_readings = bot.get_motor_encoder()
         position = encoder_readings[self.port]
         self.position = position
+        return self.position
 
     def set_free_drive(self):
         """Sets the motor to free drive mode."""
@@ -215,8 +217,9 @@ class MecanumDrive:
         return self.position
 
 motor_test = Motor(0)
-motor_test.set_pid_coefficient(1, 0, 0.5)
+motor_test.set_pid_coefficient(0.1, 0, 0)
 motor_test.set_position(5000)
+print(motor_test.update_position())
 
 # def test_servo():
 #     """ test basic servo functions """
