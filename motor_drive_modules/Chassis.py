@@ -31,7 +31,6 @@ class Motor:
         """ Sets the motor's drive power, with an option to reverse direction. """
         """ Power range from -100 to 100 """
         self.output_power = -power if reverse else power
-        print(motor_velocity_array, self.port)
         motor_velocity_array[self.port] = self.output_power
         bot.set_motor(motor_velocity_array[0], motor_velocity_array[1], motor_velocity_array[2], motor_velocity_array[3])
 
@@ -52,10 +51,12 @@ class Motor:
 
     def set_position(self, target_position):
         """ Moves the motor to a specific position using PID control. """
+        self.update_position()
         position_pid = PIDController(self.kP, self.kI, self.kD)
         while not(abs(target_position - self.position) < self.tolerance):
             self.update_position()  # Update positional readings of the motor
             self.set(position_pid.calculate(self.position, target_position))
+            print(">>>>>>", target_position-self.position)
 
     def set_brake(self):
         """ Sets the motor to brake mode. """
@@ -210,31 +211,8 @@ class MecanumDrive:
         return self.position
 
 motor_test = Motor(0)
-motor_test.set_pid_coefficient(1, 0, 0)
-
-# Function to update the plot
-def update(frame):
-    current_value = motor_test.update_position()
-    
-    times.append(time.time() - start_time)  # Update time
-    current_reading.append(current_value)  # Update velocity
-    
-    ax.clear()
-    ax.plot(times, current_reading)
-    ax.set_xlabel('Time (s)')
-    ax.set_ylabel('Position')
-    plt.title('Wheel Position Over Time')
-
-# Initial setup
-times = [0]  # Store times
-current_reading = [0]  # Store sensor position reading
-start_time = time.time()
-
-fig, ax = plt.subplots()
-
+motor_test.set_pid_coefficient(1, 0, 0.5)
 motor_test.set_position(5000)
-ani = FuncAnimation(fig, update, interval=100)  # Update every 100 ms
-plt.show()
 
 # def test_servo():
 #     """ test basic servo functions """
