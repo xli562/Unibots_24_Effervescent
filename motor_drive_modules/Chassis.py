@@ -50,13 +50,17 @@ class Motor:
         self.kD = kD
 
     def set_position(self, target_position):
-        """ Moves the motor to a specific position using PID control. """
+        """Moves the motor to a specific position using PID control."""
         self.update_position()
         position_pid = PIDController(self.kP, self.kI, self.kD)
-        while not(abs(target_position - self.position) < self.tolerance):
+        while abs(target_position - self.position) >= self.tolerance:
             self.update_position()  # Update positional readings of the motor
-            self.set(position_pid.calculate(self.position, target_position))
-            print(">>>>>>", target_position-self.position)
+            pid_output = position_pid.calculate(self.position, target_position)
+            # Ensure control effort is within [-100, 100] range
+            control_effort = max(min(pid_output, 100), -100)
+            self.set(control_effort)
+            print(">>>>>>", target_position - self.position)
+        self.set(0)  # Stop the motor once target position is within tolerance
 
     def set_brake(self):
         """ Sets the motor to brake mode. """
