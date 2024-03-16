@@ -59,7 +59,7 @@ class Motor:
         self.set_position(self.position)
 
 
-class Servo():
+class Servo:
     """ The class to represent the gripper's servo. """
     
     def __init__(self, port):
@@ -90,6 +90,53 @@ class Servo():
         """ Release a mini rugby. """
         ''' TODO: Calibration '''
         self.set_position(self._release_position)
+
+
+class Intake:
+    def __init__(self, positive_port=2, negative_port=3):
+        """ Initializes the intake motor on the given port. """
+        self._positive_port = positive_port    # positive port of the motor
+        self._negative_port = negative_port    # negative port of the motor
+        self._eat_power = 50   # intaking pwr, determines pwm ratio
+        self._unload_power = 50
+
+    def _set(self, power:int):
+        """ Sets the intake motor's power.
+        power: will be truncated to a value between [0,100].
+               Intake is positive, unload is negative. """
+        # record the sign of power
+        eat = 1 if power >= 0 else 0
+        power = abs(power)
+        # Truncate power to [0,100]
+        power = max(0, min(100, power))
+        # Map power from [0,100] to [0, 180] to mimmick a servo
+        power = int(power / 100 * 180)
+        if eat:
+            bot.set_pwm_servo(self._negative_port, 0)
+            bot.set_pwm_servo(self._positive_port, power)
+        else:
+            bot.set_pwm_servo(self._positive_port, 0)
+            bot.set_pwm_servo(self._negative_port, -power)
+
+    def set_free_drive(self):
+        """Sets the motor to free drive mode."""
+        self._set(0)
+
+    def set_eat_power(self, power):
+        """ Sets the intaking power """
+        self._eat_power = power
+
+    def eat(self, power=None):
+        """ Intake the table tennis balls. """
+        if not power is None:
+            self._eat_power = power
+        bot.set_pwm_servo(self._port, self._eat_power)
+
+    def unload(self, power=None):
+        """ Intake the table tennis balls. """
+        if not power is None:
+            self._unload_power = power
+        bot.set_pwm_servo(self._port, -self._unload_power)
 
 
 class MecanumDrive:
@@ -181,5 +228,13 @@ def test_servo():
         servo.release()
         time.sleep(1)
 
+def test_intake():
+    intake = Intake()
+    intake._set(0)
+    input()
+    intake._set(50)
+    time.sleep(1)
+    intake._set(-100)
+    time.sleep(1)
 
-test_servo()
+test_intake()
