@@ -162,19 +162,6 @@ class MecanumDrive:
         """Returns the current position of the robot. (Need readings from IMU through Serial)"""
         return self.position
 
-<<<<<<< Updated upstream:motor_drive_modules/Chassis.py
-def test_motor():
-    """ Test basic motor functionalities """
-    motor_test = Motor(0)
-    motor_test.set_pid_coefficient(1, 0, 0)
-    motor_test.update_position(0)
-    motor_test.set(50)
-    time.sleep(3)
-    motor_test.set(0)
-    motor_test.set(-50)
-    time.sleep(3)
-    motor_test.set(0)
-=======
 motor_test = Motor(0)
 motor_test.set_pid_coefficient(1, 0, 0)
 
@@ -209,17 +196,16 @@ while True:
     time.delay(5)
     motor_test.set_position(10000)
     time.delay(5)
->>>>>>> Stashed changes:Chassis.py
 
-def test_servo():
-    """ test basic servo functions """
-    servo = Servo(1)
-    print(servo.get_position())
-    while 1:
-        servo.grip()
-        time.sleep(1)
-        servo.release()
-        time.sleep(1)
+# def test_servo():
+#     """ test basic servo functions """
+#     servo = Servo(1)
+#     print(servo.get_position())
+#     while 1:
+#         servo.grip()
+#         time.sleep(1)
+#         servo.release()
+#         time.sleep(1)
 
 
-test_servo()
+# test_servo()
