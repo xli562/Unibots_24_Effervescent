@@ -214,24 +214,20 @@ motor_test.set_pid_coefficient(1, 0, 0)
 
 # Function to update the plot
 def update(frame):
-    global prev_reading
-    current_reading = motor_test.update_position()
-    velocity = current_reading - prev_reading  # Calculate velocity
-    prev_reading = current_reading
+    current_value = motor_test.update_position()
     
     times.append(time.time() - start_time)  # Update time
-    velocities.append(velocity)  # Update velocity
+    current_reading.append(current_value)  # Update velocity
     
     ax.clear()
-    ax.plot(times, velocities)
+    ax.plot(times, current_reading)
     ax.set_xlabel('Time (s)')
-    ax.set_ylabel('Velocity')
-    plt.title('Wheel Velocity Over Time')
+    ax.set_ylabel('Position')
+    plt.title('Wheel Position Over Time')
 
 # Initial setup
-prev_reading = motor_test.update_position()
 times = [0]  # Store times
-velocities = [0]  # Store velocities
+current_reading = [0]  # Store sensor position reading
 start_time = time.time()
 
 fig, ax = plt.subplots()
@@ -260,4 +256,4 @@ def test_intake():
     time.sleep(1)
 
 
-test_intake()
+# test_intake()
