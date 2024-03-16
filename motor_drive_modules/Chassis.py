@@ -2,9 +2,7 @@ import Constants
 from PIDController import PIDController
 import time
 from RosmasterBoard import Rosmaster
-import matplotlib.pyplot as plt
-from matplotlib.animation import FuncAnimation
-import numpy as np
+import threading
 
 # global array to store motor velocity
 # N.B. Actual velocity of the wheel is this times a constant
@@ -40,6 +38,7 @@ class Motor:
         encoder_readings = bot.get_motor_encoder()
         position = encoder_readings[self.port]
         self.position = position
+        time.sleep(0.001)
         return self.position
 
     def set_free_drive(self):
@@ -62,12 +61,8 @@ class Motor:
             control_effort = max(min(pid_output, 100), -100)
             self.set(control_effort)
             print(">>>>>>", target_position - self.position)
+            time.sleep(0.001)
         self.set(0)  # Stop the motor once target position is within tolerance
-
-    def set_brake(self):
-        """ Sets the motor to brake mode. """
-        self.set_position(self.position)
-
 
 class Servo:
     """ The class to represent the gripper's servo. """
@@ -216,10 +211,34 @@ class MecanumDrive:
         """Returns the current position of the robot. (Need readings from IMU through Serial)"""
         return self.position
 
-motor_test = Motor(0)
-motor_test.set_pid_coefficient(0.1, 0, 0)
-motor_test.set_position(5000)
-print(motor_test.update_position())
+motor_0 = Motor(0)
+motor_1 = Motor(1)
+motor_2 = Motor(2)
+motor_3 = Motor(3)
+
+motor_0.set_pid_coefficient(0.8, 5, 6)
+motor_1.set_pid_coefficient(0.8, 5, 6)
+motor_2.set_pid_coefficient(0.8, 5, 6)
+motor_3.set_pid_coefficient(0.8, 5, 6)
+
+threads = []
+motor_list = [motor_0, motor_1, motor_2, motor_3]
+
+for motor in motor_list:
+    thread = threading.Thread(target=motor.set_position, args=5000)
+    threads.append(thread)
+    thread.start()
+
+for thread in threads:
+    thread.join()
+
+for motor in motor_list:
+    thread = threading.Thread(target=motor.set_position, args=0)
+    threads.append(thread)
+    thread.start()
+
+for thread in threads:
+    thread.join()
 
 # def test_servo():
 #     """ test basic servo functions """
@@ -239,6 +258,5 @@ def test_intake():
     time.sleep(1)
     intake._set(-100)
     time.sleep(1)
-
 
 # test_intake()
