@@ -176,13 +176,13 @@ class Intake:
         """ Intake the table tennis balls. """
         if not power is None:
             self._eat_power = power
-        bot._set(self._eat_power)
+        self._set(self._eat_power)
 
     def unload(self, power=None):
         """ Intake the table tennis balls. """
         if not power is None:
             self._unload_power = power
-        bot.set_pwm_servo(self._port, -self._unload_power)
+        self._set(-self._unload_power)
 
 
 class MecanumDrive:
