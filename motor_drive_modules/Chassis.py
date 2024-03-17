@@ -164,7 +164,7 @@ class Intake:
         elif power < -5:
             power = int(0.379*power + 37.895)
         elif power <= 5:
-            power = 0
+            power = 90
         elif power < 100:
             power = int(0.379*power + 142.105)
         else:
