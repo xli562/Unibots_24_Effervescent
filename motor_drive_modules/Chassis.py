@@ -20,10 +20,14 @@ class Motor:
         self.output_power = 0   # output pwr, determines pwm ratio
         self.position = 0   # position of encoder
         self.tolerance = 10
+        self.vel_tolerance = 10
         # PID parameters
         self.kP = 1
         self.kI = 0
         self.kD = 0
+        self.vel_kP = 1
+        self.vel_kI = 0
+        self.vel_kD = 0
         self.position = self.update_position()
 
     def set(self, power, reverse=False):
@@ -50,6 +54,11 @@ class Motor:
         self.kI = kI
         self.kD = kD
 
+    def set_vel_pid_coefficient(self, vel_kP, vel_kI, vel_kD):
+        self.kP = vel_kP
+        self.kI = vel_kI
+        self.kD = vel_kD
+
     def set_position(self, target_position):
         """Moves the motor to a specific position using PID control."""
         self.update_position()
@@ -63,6 +72,24 @@ class Motor:
             print(">>>>>>", target_position - self.position)
             time.sleep(0.001)
         self.set(0)  # Stop the motor once target position is within tolerance
+
+
+    def set_velocity(self, target_vel):
+        """Moves the motor at a specific velocity using PID control."""
+        previous = self.update_position()
+        time.sleep(0.001)
+        current_vel = (self.update_position() - previous)/0.001
+        velocity_pid = PIDController(self.vel_kP, self.vel_kI, self.vel_kD)
+        while abs(target_vel - current_vel) >= self.vel_tolerance:
+            previous = self.update_position()
+            time.sleep(0.001)
+            current_vel = (self.update_position() - previous)/0.001
+            pid_output = velocity_pid.calculate(current_vel, target_vel)
+            # Ensure control effort is within [-100, 100] range
+            control_effort = max(min(pid_output, 100), -100)
+            self.set(control_effort)
+            print(">>>>>>", target_vel - current_vel)
+            time.sleep(0.001)
 
 class Servo:
     """ The class to represent the gripper's servo. """
@@ -211,30 +238,38 @@ class MecanumDrive:
         """Returns the current position of the robot. (Need readings from IMU through Serial)"""
         return self.position
 
+
+
+
+# motor_0 = Motor(0)
+# motor_1 = Motor(1)
+# motor_2 = Motor(2)
+# motor_3 = Motor(3)
+
+# motor_0.set_pid_coefficient(0.8, 5, 6)
+# motor_1.set_pid_coefficient(0.8, 5, 6)
+# motor_2.set_pid_coefficient(0.8, 5, 6)
+# motor_3.set_pid_coefficient(0.8, 5, 6)
+
+# threads = []
+# motors = [motor_0, motor_1, motor_2, motor_3]
+
+# def set_motor_positions(positions):
+#     threads = []
+#     for motor, position in zip(motors, positions):
+#         thread = threading.Thread(target=motor.set_position, args=(position,))
+#         threads.append(thread)
+#         thread.start()
+#     for thread in threads:
+#         thread.join()
+
+# set_motor_positions([5000, 5000, 5000, 5000])
+# set_motor_positions([0, 0, 0, 0])
+
 motor_0 = Motor(0)
-motor_1 = Motor(1)
-motor_2 = Motor(2)
-motor_3 = Motor(3)
+motor_0.set_vel_pid_coefficient(1, 0, 0)
+motor_0.set_velocity(100)
 
-motor_0.set_pid_coefficient(0.8, 5, 6)
-motor_1.set_pid_coefficient(0.8, 5, 6)
-motor_2.set_pid_coefficient(0.8, 5, 6)
-motor_3.set_pid_coefficient(0.8, 5, 6)
-
-threads = []
-motors = [motor_0, motor_1, motor_2, motor_3]
-
-def set_motor_positions(positions):
-    threads = []
-    for motor, position in zip(motors, positions):
-        thread = threading.Thread(target=motor.set_position, args=(position,))
-        thread.append(thread)
-        thread.start()
-    for thread in threads:
-        thread.join()
-
-set_motor_positions([5000, 5000, 5000, 5000])
-set_motor_positions([0, 0, 0, 0])
 
 # def test_servo():
 #     """ test basic servo functions """
