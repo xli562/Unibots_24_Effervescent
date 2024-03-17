@@ -77,7 +77,7 @@ class Motor:
         """Moves the motor at a specific velocity using PID control."""
         previous_position = self.update_position()
         previous_time = time.time()
-        velocity_pid = self.velocity_pid  # Use the PID controller initialized in __init__
+        velocity_pid = PIDController(self.vel_kP, self.vel_kI, self.vel_kD)
 
         while True:
             current_time = time.time()
@@ -88,7 +88,6 @@ class Motor:
             
             if abs(target_vel - current_vel) < self.vel_tolerance:
                 break
-            
             pid_output = velocity_pid.calculate(current_vel, target_vel)
             control_effort = max(min(pid_output, 100), -100)
             self.set(control_effort)
