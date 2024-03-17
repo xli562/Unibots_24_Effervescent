@@ -155,7 +155,8 @@ class Intake:
     def _set(self, power:int):
         """ Sets the intake motor's power.
         power: will be truncated to a value between [0,100].
-               Intake is positive, unload is negative. """
+               Intake is positive, unload is negative. 
+               Motor will not turn for power <~ 50, due to friction."""
         # Truncate power to [-100,100]
         power = max(-100, min(100, power))
         # Map power from [-100,100] to [0, 180] to mimmick a servo
@@ -175,7 +176,7 @@ class Intake:
         """ Intake the table tennis balls. """
         if not power is None:
             self._eat_power = power
-        bot.set_pwm_servo(self._port, self._eat_power)
+        bot._set(self._eat_power)
 
     def unload(self, power=None):
         """ Intake the table tennis balls. """
@@ -296,11 +297,10 @@ def test_servo():
 
 def test_intake():
     intake = Intake()
-    intake._set(0)
+    intake.eat()
     input()
-    intake._set(50)
+    intake.unload(50)
     time.sleep(2)
-    intake._set(-100)
-    time.sleep(2)
+    intake.set_free_drive()
 
 test_intake()

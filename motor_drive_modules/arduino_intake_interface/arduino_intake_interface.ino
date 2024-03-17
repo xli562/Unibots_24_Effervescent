@@ -1,5 +1,5 @@
-#define positivePin A0
-#define negativePin A1
+#define positivePin 3
+#define negativePin 5
 
 volatile unsigned long pulseHighTime = 0;
 volatile unsigned long pulseLowTime = 0;
@@ -7,7 +7,7 @@ volatile unsigned long lastRiseTime = 0;
 volatile bool isHigh = false;
 int dutyCycle = 0;
 int maxDutyCycle = 1100;
-int minDutyCycle = 245;
+int minDutyCycle = 242;
 int power = 0;
 
 void setup() {
@@ -30,9 +30,11 @@ void loop() {
     pulseLowTime = 0;
   }
   // Drive motors accordingly
-  power = map(dutyCycle, minDutyCycle, maxDutyCycle, -1023, 1023);
+  Serial.print(dutyCycle);
+  Serial.print(" ");
+  power = map(dutyCycle, minDutyCycle, maxDutyCycle, -255, 255);
   // Truncate power to [-1023, 1023]
-  power = max(-1023, min(power, 1023));
+  power = max(-255, min(power, 255));
   setPower(power);
 }
 
@@ -59,6 +61,16 @@ void measurePulse() {
 
 void setPower(int pwr) {
   bool eat = 0;
+  if (abs(pwr) < 140) {
+    // This little power will not turn the motor.
+    // Thus setting outputs to 0
+    analogWrite(negativePin, 0);
+    analogWrite(positivePin, 0);
+    Serial.print(0);
+    Serial.print(", ");
+    Serial.println(0);
+    return;
+  }
   if (pwr >= 0) {
     analogWrite(negativePin, 0);
     analogWrite(positivePin, pwr);
