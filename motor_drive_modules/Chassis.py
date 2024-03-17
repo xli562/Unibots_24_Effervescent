@@ -13,6 +13,9 @@ bot.create_receive_threading()
 # Enable auto data sending, and meant to be temporary (not forever)
 bot.set_auto_report_state(enable = True, forever = False)
 
+def exponential_moving_average(new_value, previous_ema, alpha=0.1):
+    return alpha * new_value + (1 - alpha) * previous_ema
+
 class Motor:
     def __init__(self, port):
         """ Initializes the motor on the given port. """
@@ -78,6 +81,7 @@ class Motor:
         previous_position = self.update_position()
         previous_time = time.time()
         velocity_pid = PIDController(self.vel_kP, self.vel_kI, self.vel_kD)
+        pid_output_ema = 0  # Initialize outside the loop
 
         while True:
             current_time = time.time()
@@ -89,10 +93,11 @@ class Motor:
             if abs(target_vel - current_vel) < self.vel_tolerance:
                 break
             pid_output = velocity_pid.calculate(current_vel, target_vel)
-            control_effort = max(min(pid_output, 100), -100)
+            pid_output_ema = exponential_moving_average(pid_output, pid_output_ema)
+            control_effort = max(min(pid_output_ema, 100), -100)
             self.set(control_effort)
             
-            print(">>>>>>", target_vel - current_vel)
+            print(">>>>>>", current_vel)
             
             previous_position = current_position
             previous_time = current_time
@@ -278,7 +283,7 @@ class MecanumDrive:
 
 motor_0 = Motor(0)
 motor_0.set_vel_pid_coefficient(1, 0, 0)
-motor_0.set_velocity(30)
+motor_0.set_velocity(1)
 
 
 # def test_servo():
