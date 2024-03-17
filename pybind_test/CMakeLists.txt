@@ -1,6 +1,5 @@
 cmake_minimum_required(VERSION 3.4...3.18)
 project(pybind_test)
-set(PYBIND11_FINDPYTHON True)
 find_package(pybind11 REQUIRED)
 pybind11_add_module(example test1.cpp)
 pybind11_add_module(module_name main.cpp)

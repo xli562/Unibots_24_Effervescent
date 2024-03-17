@@ -1,6 +1,5 @@
 #include "ord_lidar_sdk.h"
 #include "ord_lidar_driver.h"
-#include <pybind11/pybind11.h>
 
 using namespace ordlidar;
 

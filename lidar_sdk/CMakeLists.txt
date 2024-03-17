@@ -119,3 +119,8 @@ add_custom_target(sdk_uninstall
     COMMAND "${CMAKE_COMMAND}" -P "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake")
 
 
+cmake_minimum_required(VERSION 3.4...3.18)
+project(ordlidar_bindings)
+find_package(pybind11 REQUIRED)
+pybind11_add_module(ordlidar pyordlidar.cpp)
+	

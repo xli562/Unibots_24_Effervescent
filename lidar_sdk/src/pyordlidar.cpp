@@ -5,6 +5,7 @@
 #include "ord_lidar_driver.h" // Your original driver header
 
 namespace py = pybind11;
+using namespace ordlidar;
 
 PYBIND11_MODULE(ordlidar, m) {
     m.doc() = "Pybind11 plugin for ORDLidar";
@@ -26,10 +27,10 @@ PYBIND11_MODULE(ordlidar, m) {
         .def("Activate", &OrdlidarDriver::Activate)
         .def("Deactive", &OrdlidarDriver::Deactive)
         .def("GetFirmwareVersion", &OrdlidarDriver::GetFirmwareVersion)
-        .def("GrabFullScanBlocking", &ordlidar::OrdlidarDriver::GrabFullScanBlocking)
-        .def("GrabOneScanBlocking", &ordlidar::OrdlidarDriver::GrabOneScanBlocking)
-        .def("GrabFullScan", &ordlidar::OrdlidarDriver::GrabFullScan)
-        .def("GrabOneScan", &ordlidar::OrdlidarDriver::GrabOneScan);
+        .def("GrabFullScanBlocking", &OrdlidarDriver::GrabFullScanBlocking)
+        .def("GrabOneScanBlocking", &OrdlidarDriver::GrabOneScanBlocking)
+        .def("GrabFullScan", &OrdlidarDriver::GrabFullScan)
+        .def("GrabOneScan", &OrdlidarDriver::GrabOneScan);
         
         // You will need to provide custom bindings for functions accepting or returning non-primitive types
         // For example, handling std::string parameters or return values.
