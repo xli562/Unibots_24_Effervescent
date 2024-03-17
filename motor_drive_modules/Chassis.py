@@ -111,6 +111,7 @@ class Motor:
             previous_position = current_position
             previous_time = current_time
 
+
 class Servo:
     """ The class to represent the gripper's servo. """
     
@@ -149,8 +150,8 @@ class Intake:
         """ Initializes the intake motor on the given port. """
         self._positive_port = positive_port    # positive port of the motor
         self._negative_port = negative_port    # negative port of the motor
-        self._eat_power = 50   # intaking pwr, determines pwm ratio
-        self._unload_power = 50
+        self._eat_power = 100   # intaking pwr, determines pwm ratio
+        self._unload_power = 100
 
     def _set(self, power:int):
         """ Sets the intake motor's power.
@@ -166,9 +167,11 @@ class Intake:
         if eat:
             bot.set_pwm_servo(self._negative_port, 0)
             bot.set_pwm_servo(self._positive_port, power)
+            print('port', self._positive_port, 'power', power)
         else:
             bot.set_pwm_servo(self._positive_port, 0)
             bot.set_pwm_servo(self._negative_port, -power)
+            print('port', self._negative_port, 'power', -power)
 
     def set_free_drive(self):
         """Sets the motor to free drive mode."""
@@ -260,54 +263,54 @@ class MecanumDrive:
 
 
 
+def testmotor():
+    # motor_0 = Motor(0)
+    # motor_1 = Motor(1)
+    # motor_2 = Motor(2)
+    # motor_3 = Motor(3)
 
-# motor_0 = Motor(0)
-# motor_1 = Motor(1)
-# motor_2 = Motor(2)
-# motor_3 = Motor(3)
+    # motor_0.set_pid_coefficient(0.8, 5, 6)
+    # motor_1.set_pid_coefficient(0.8, 5, 6)
+    # motor_2.set_pid_coefficient(0.8, 5, 6)
+    # motor_3.set_pid_coefficient(0.8, 5, 6)
 
-# motor_0.set_pid_coefficient(0.8, 5, 6)
-# motor_1.set_pid_coefficient(0.8, 5, 6)
-# motor_2.set_pid_coefficient(0.8, 5, 6)
-# motor_3.set_pid_coefficient(0.8, 5, 6)
+    # threads = []
+    # motors = [motor_0, motor_1, motor_2, motor_3]
 
-# threads = []
-# motors = [motor_0, motor_1, motor_2, motor_3]
+    # def set_motor_positions(positions):
+    #     threads = []
+    #     for motor, position in zip(motors, positions):
+    #         thread = threading.Thread(target=motor.set_position, args=(position,))
+    #         threads.append(thread)
+    #         thread.start()
+    #     for thread in threads:
+    #         thread.join()
 
-# def set_motor_positions(positions):
-#     threads = []
-#     for motor, position in zip(motors, positions):
-#         thread = threading.Thread(target=motor.set_position, args=(position,))
-#         threads.append(thread)
-#         thread.start()
-#     for thread in threads:
-#         thread.join()
+    # set_motor_positions([5000, 5000, 5000, 5000])
+    # set_motor_positions([0, 0, 0, 0])
 
-# set_motor_positions([5000, 5000, 5000, 5000])
-# set_motor_positions([0, 0, 0, 0])
-
-motor_0 = Motor(0)
-motor_0.set_vel_pid_coefficient(10, 0, 0)
-motor_0.set_velocity(10)
+    motor_0 = Motor(0)
+    motor_0.set_vel_pid_coefficient(10, 0, 0)
+    motor_0.set_velocity(10)
 
 
-# def test_servo():
-#     """ test basic servo functions """
-#     servo = Servo(1)
-#     print(servo.get_position())
-#     while 1:
-#         servo.grip()
-#         time.sleep(1)
-#         servo.release()
-#         time.sleep(1)
+def test_servo():
+    """ test basic servo functions """
+    servo = Servo(1)
+    print(servo.get_position())
+    while 1:
+        servo.grip()
+        time.sleep(1)
+        servo.release()
+        time.sleep(1)
 
 def test_intake():
     intake = Intake()
     intake._set(0)
     input()
     intake._set(50)
-    time.sleep(1)
+    time.sleep(2)
     intake._set(-100)
-    time.sleep(1)
+    time.sleep(2)
 
-# test_intake()
+test_intake()

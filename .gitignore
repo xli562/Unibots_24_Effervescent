@@ -1,3 +1,5 @@
 __pycache__/
 renv/
 lidar_sdk/build
+.vscode/
+.idea/

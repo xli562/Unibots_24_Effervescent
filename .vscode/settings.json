@@ -1,3 +1,4 @@
 {
-    "python.pythonPath": "renv/bin/python"
+    "python.pythonPath": "renv/bin/python",
+    "cmake.configureOnOpen": false
 }
