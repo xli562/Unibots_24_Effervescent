@@ -82,6 +82,7 @@ class Motor:
         previous_position = self.update_position()
         previous_time = time.time()
         pid_output_ema = 0  # Initialize outside the loop
+        velocity_pid = PIDController(self.vel_kP, self.vel_kI, self.vel_kD)
 
         while True:
             time.sleep(0.01)  # Control the loop rate to be more consistent
@@ -97,7 +98,7 @@ class Motor:
                 self.set(0)  # Stop the motor
                 break
 
-            pid_output = self.velocity_pid.calculate(current_vel, target_vel)
+            pid_output = velocity_pid.calculate(current_vel, target_vel)
             pid_output_ema = exponential_moving_average(pid_output, pid_output_ema, alpha=0.1)
             control_effort = max(min(pid_output_ema, 100), -100)
             self.set(control_effort)
