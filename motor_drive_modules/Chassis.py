@@ -59,9 +59,9 @@ class Motor:
         self.kD = kD
 
     def set_vel_pid_coefficient(self, vel_kP, vel_kI, vel_kD):
-        self.kP = vel_kP
-        self.kI = vel_kI
-        self.kD = vel_kD
+        self.vel_kP = vel_kP
+        self.vel_kI = vel_kI
+        self.vel_kD = vel_kD
 
     def set_position(self, target_position):
         """Moves the motor to a specific position using PID control."""
@@ -81,31 +81,31 @@ class Motor:
         """Moves the motor at a specific velocity using PID control."""
         previous_position = self.update_position()
         previous_time = time.time()
-        velocity_pid = PIDController(self.vel_kP, self.vel_kI, self.vel_kD)
         pid_output_ema = 0  # Initialize outside the loop
 
         while True:
+            time.sleep(0.01)  # Control the loop rate to be more consistent
             current_time = time.time()
-            elapsed_time = current_time - previous_time
+            elapsed_time = max(current_time - previous_time, 1e-5)  # Avoid division by very small number
             
             current_position = self.update_position()
-            current_vel = (current_position - previous_position) * 2 * math.pi / (1320 * elapsed_time)
+            ticks_per_revolution = 1320.0
+            # Convert ticks to radians per second
+            current_vel = (current_position - previous_position) * 2.0 * math.pi / (ticks_per_revolution * elapsed_time)
             
             if abs(target_vel - current_vel) < self.vel_tolerance:
+                self.set(0)  # Stop the motor
                 break
-            pid_output = velocity_pid.calculate(current_vel, target_vel)
-            pid_output_ema = exponential_moving_average(pid_output, pid_output_ema)
+
+            pid_output = self.velocity_pid.calculate(current_vel, target_vel)
+            pid_output_ema = exponential_moving_average(pid_output, pid_output_ema, alpha=0.1)
             control_effort = max(min(pid_output_ema, 100), -100)
             self.set(control_effort)
             
-            print(">>>>>> **V**", current_vel)
+            print(">>>>>> Current Vel", current_vel)
             
             previous_position = current_position
             previous_time = current_time
-            
-            # Adjust the sleep time if necessary to control the loop rate
-            time.sleep(max(0, 0.001 - (time.time() - current_time)))
-
 
 class Servo:
     """ The class to represent the gripper's servo. """
@@ -283,8 +283,8 @@ class MecanumDrive:
 # set_motor_positions([0, 0, 0, 0])
 
 motor_0 = Motor(0)
-motor_0.set_vel_pid_coefficient(1, 0, 0)
-motor_0.set_velocity(1)
+motor_0.set_vel_pid_coefficient(10, 0, 0)
+motor_0.set_velocity(10)
 
 
 # def test_servo():
