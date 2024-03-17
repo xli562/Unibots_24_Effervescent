@@ -73,23 +73,34 @@ class Motor:
             time.sleep(0.001)
         self.set(0)  # Stop the motor once target position is within tolerance
 
-
     def set_velocity(self, target_vel):
         """Moves the motor at a specific velocity using PID control."""
-        previous = self.update_position()
-        time.sleep(0.001)
-        current_vel = (self.update_position() - previous)/0.001
-        velocity_pid = PIDController(self.vel_kP, self.vel_kI, self.vel_kD)
-        while abs(target_vel - current_vel) >= self.vel_tolerance:
-            previous = self.update_position()
-            time.sleep(0.001)
-            current_vel = (self.update_position() - previous)/0.001
+        previous_position = self.update_position()
+        previous_time = time.time()
+        velocity_pid = self.velocity_pid  # Use the PID controller initialized in __init__
+
+        while True:
+            current_time = time.time()
+            elapsed_time = current_time - previous_time
+            
+            current_position = self.update_position()
+            current_vel = (current_position - previous_position) / elapsed_time
+            
+            if abs(target_vel - current_vel) < self.vel_tolerance:
+                break
+            
             pid_output = velocity_pid.calculate(current_vel, target_vel)
-            # Ensure control effort is within [-100, 100] range
             control_effort = max(min(pid_output, 100), -100)
             self.set(control_effort)
+            
             print(">>>>>>", target_vel - current_vel)
-            time.sleep(0.001)
+            
+            previous_position = current_position
+            previous_time = current_time
+            
+            # Adjust the sleep time if necessary to control the loop rate
+            time.sleep(max(0, 0.001 - (time.time() - current_time)))
+
 
 class Servo:
     """ The class to represent the gripper's servo. """
@@ -268,7 +279,7 @@ class MecanumDrive:
 
 motor_0 = Motor(0)
 motor_0.set_vel_pid_coefficient(1, 0, 0)
-motor_0.set_velocity(100)
+motor_0.set_velocity(30)
 
 
 # def test_servo():
