@@ -1,4 +1,5 @@
 import Constants
+from decimal import Decimal
 
 class PIDController:
     def __init__(self, kP, kI, kD):
@@ -11,10 +12,11 @@ class PIDController:
     #Control effort calculation
     def calculate(self, current, target, dt=Constants.PID.dt):
         error = target - current
-        derivative = (error - self.prev_error) / dt
-        self.integral = self.integral + error * dt
+        
+        derivative = (error - self.prev_error) / Decimal(dt)
+        self.integral = self.integral + Decimal(error) * Decimal(dt)
 
-        control_effort = (self.P * error) + (self.I * self.integral) + (self.D * derivative)
+        control_effort = (self.P * Decimal(error)) + (self.I * self.integral) + (self.D * derivative)
 
-        self.prev_error = error
+        self.prev_error = Decimal(error)
         return control_effort

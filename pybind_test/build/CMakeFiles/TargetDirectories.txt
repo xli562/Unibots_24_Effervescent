@@ -1,0 +1,4 @@
+/Users/yqs/Desktop/pybind_test/build/CMakeFiles/example.dir
+/Users/yqs/Desktop/pybind_test/build/CMakeFiles/module_name.dir
+/Users/yqs/Desktop/pybind_test/build/CMakeFiles/edit_cache.dir
+/Users/yqs/Desktop/pybind_test/build/CMakeFiles/rebuild_cache.dir
