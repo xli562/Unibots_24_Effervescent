@@ -1,22 +1,31 @@
 import subprocess
+import threading
 
-# Compile the C++ program first if needed
-# subprocess.run(['g++', 'blocking_test.cpp', '-o', 'blocking_test', '-lyour_library'])
+# The path to the directory where you want to run the command
+working_directory = '/home/eff/Desktop/Unibots_24_Effervescent/lidar_sdk/build'
 
-# The command to run the C++ program
-command = './blocking_test'
+# The command you want to run
+command = './blocking_test'  # Ensure this is executable in the target directory
 
-# Using subprocess.Popen to execute the command and capture output
-with subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, shell=True) as process:
-    try:
-        # Wait for the program to finish and capture stdout and stderr
-        stdout, stderr = process.communicate(timeout=30)  # Adjust the timeout as necessary
-    except subprocess.TimeoutExpired:
-        process.kill()
-        stdout, stderr = process.communicate()
-        print("The program didn't finish in the allotted time.")
+# Function to capture output from stdout
+def capture_output(pipe, label):
+    for line in iter(pipe.readline, ''):
+        print(f"{label}: {line}", end='')
 
-    print("STDOUT:")
-    print(stdout)
-    print("STDERR:")
-    print(stderr)
+# Start the process
+process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, bufsize=1, universal_newlines=True, cwd=working_directory, shell=True)
+
+# Create threads to handle stdout and stderr output
+stdout_thread = threading.Thread(target=capture_output, args=(process.stdout, 'STDOUT'))
+stderr_thread = threading.Thread(target=capture_output, args=(process.stderr, 'STDERR'))
+
+# Start the threads
+stdout_thread.start()
+stderr_thread.start()
+
+# Wait for the output capture threads to finish (if the process is continuous, this might never happen without an external stop condition)
+stdout_thread.join()
+stderr_thread.join()
+
+# Optionally, add a mechanism to terminate the process safely
+# process.terminate()
