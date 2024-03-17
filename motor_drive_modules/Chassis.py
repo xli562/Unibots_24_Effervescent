@@ -3,6 +3,7 @@ from PIDController import PIDController
 import time
 from RosmasterBoard import Rosmaster
 import threading
+import math
 
 # global array to store motor velocity
 # N.B. Actual velocity of the wheel is this times a constant
@@ -23,7 +24,7 @@ class Motor:
         self.output_power = 0   # output pwr, determines pwm ratio
         self.position = 0   # position of encoder
         self.tolerance = 10
-        self.vel_tolerance = 10
+        self.vel_tolerance = 0.1
         # PID parameters
         self.kP = 1
         self.kI = 0
@@ -88,7 +89,7 @@ class Motor:
             elapsed_time = current_time - previous_time
             
             current_position = self.update_position()
-            current_vel = (current_position - previous_position) / elapsed_time
+            current_vel = (current_position - previous_position) * 2 * math.pi / (1320 * elapsed_time)
             
             if abs(target_vel - current_vel) < self.vel_tolerance:
                 break
@@ -97,7 +98,7 @@ class Motor:
             control_effort = max(min(pid_output_ema, 100), -100)
             self.set(control_effort)
             
-            print(">>>>>>", current_vel)
+            print(">>>>>> **V**", current_vel)
             
             previous_position = current_position
             previous_time = current_time
