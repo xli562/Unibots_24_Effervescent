@@ -146,6 +146,13 @@ class Servo:
 
 
 class Intake:
+    """ Class to drive the intake motor.
+    N.B. motor stops when power is between [-5,5],
+        and small increments in power might not make any actual difference,
+        as mapping returns int, not float. For example, 
+        power = 10 and power = 12 might not make an actual difference 
+        to the output power."""
+
     def __init__(self, port=2):
         """ Initializes the intake motor on the given port. """
         self._port = port    # output port to arduino

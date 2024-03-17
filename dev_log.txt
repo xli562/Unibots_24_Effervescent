@@ -1,6 +1,13 @@
 *** UniBots 2024 electronics & programming log ***
 
 
+Sun. 2024/03/17
+    Intake
+        - Using servo output directly from Ros board will not work, since its PWM duty cycle ranges only from 0% to ~5%, not enough to overcome friction and start the motor.
+        - Now using Arduino UNO to read from servo output and generate PWM signals to the red L298N motor drive board.
+        - Intake will stop for power between [-5,5], and will increase speed as abs(power) increases from (5,100]. 
+
+
 Sat. 2024/03/16
     Gripper
         - If gripping is performed when rugby is not 'horizontal' and directly against the robot, grippers may not be able to close fully, and the robot / the servo might lift off their supports.
