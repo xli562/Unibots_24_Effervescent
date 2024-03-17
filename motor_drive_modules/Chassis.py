@@ -146,10 +146,9 @@ class Servo:
 
 
 class Intake:
-    def __init__(self, positive_port=2, negative_port=3):
+    def __init__(self, port=2):
         """ Initializes the intake motor on the given port. """
-        self._positive_port = positive_port    # positive port of the motor
-        self._negative_port = negative_port    # negative port of the motor
+        self._port = port    # output port to arduino
         self._eat_power = 100   # intaking pwr, determines pwm ratio
         self._unload_power = 100
 
@@ -157,21 +156,12 @@ class Intake:
         """ Sets the intake motor's power.
         power: will be truncated to a value between [0,100].
                Intake is positive, unload is negative. """
-        # record the sign of power
-        eat = 1 if power >= 0 else 0
-        power = abs(power)
-        # Truncate power to [0,100]
-        power = max(0, min(100, power))
-        # Map power from [0,100] to [0, 180] to mimmick a servo
-        power = int(power / 100 * 180)
-        if eat:
-            bot.set_pwm_servo(self._negative_port, 0)
-            bot.set_pwm_servo(self._positive_port, power)
-            print('port', self._positive_port, 'power', power)
-        else:
-            bot.set_pwm_servo(self._positive_port, 0)
-            bot.set_pwm_servo(self._negative_port, -power)
-            print('port', self._negative_port, 'power', -power)
+        # Truncate power to [-100,100]
+        power = max(-100, min(100, power))
+        # Map power from [-100,100] to [0, 180] to mimmick a servo
+        power = int(((power + 100) / 200) * 180)
+        bot.set_pwm_servo(self._port, power)
+        print('port', self._port, 'power', power)
 
     def set_free_drive(self):
         """Sets the motor to free drive mode."""
