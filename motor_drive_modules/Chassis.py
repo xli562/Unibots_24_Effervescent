@@ -156,33 +156,46 @@ class Intake:
         """ Sets the intake motor's power.
         power: will be truncated to a value between [0,100].
                Intake is positive, unload is negative. 
-               Motor will not turn for power <~ 50, due to friction."""
-        # Truncate power to [-100,100]
-        power = max(-100, min(100, power))
-        # Map power from [-100,100] to [0, 180] to mimmick a servo
-        power = int(((power + 100) / 200) * 180)
+               Motor will not turn for abs(power) <~ 5, due to friction."""
+        # The segmented mapping function to 
+        # map input[-100,100] to 'servo' angle [0,36]U{90}U[144,180]
+        if power < -100:
+            power = 0
+        elif power < -5:
+            power = int(0.379*power + 37.895)
+        elif power <= 5:
+            power = 0
+        elif power < 100:
+            power = int(0.379*power + 142.105)
+        else:
+            power = 180
         bot.set_pwm_servo(self._port, power)
-        print('port', self._port, 'power', power)
+        print(f'Intake: port {self._port}, eqvl servo angle {power}')
 
+    def set_eat_power(self, power:int):
+        """ Sets the intaking power """
+        self._eat_power = abs(power)
+
+    def set_unload_power(self, power:int):
+        """ Sets the unloading power """
+        self._unload_power = abs(power)
+
+    def eat(self, power:int=None):
+        """ Intake the table tennis balls. """
+        if not power is None:
+            self._eat_power = abs(power)
+        self._set(self._eat_power)
+
+    def unload(self, power:int=None):
+        """ Intake the table tennis balls. """
+        if not power is None:
+            self._unload_power = abs(power)
+        self._set(-self._unload_power)
+    
+    
     def set_free_drive(self):
         """Sets the motor to free drive mode."""
         self._set(0)
-
-    def set_eat_power(self, power):
-        """ Sets the intaking power """
-        self._eat_power = power
-
-    def eat(self, power=None):
-        """ Intake the table tennis balls. """
-        if not power is None:
-            self._eat_power = power
-        self._set(self._eat_power)
-
-    def unload(self, power=None):
-        """ Intake the table tennis balls. """
-        if not power is None:
-            self._unload_power = power
-        self._set(-self._unload_power)
 
 
 class MecanumDrive:
