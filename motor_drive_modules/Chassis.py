@@ -4,6 +4,9 @@ import time
 from RosmasterBoard import Rosmaster
 import threading
 import math
+from decimal import Decimal, getcontext
+
+getcontext().prec = 28
 
 # global array to store motor velocity
 # N.B. Actual velocity of the wheel is this times a constant
@@ -77,36 +80,36 @@ class Motor:
             time.sleep(0.001)
         self.set(0)  # Stop the motor once target position is within tolerance
 
-    def set_velocity(self, target_vel):
-        """Moves the motor at a specific velocity using PID control."""
-        previous_position = self.update_position()
-        previous_time = time.time()
-        pid_output_ema = 0  # Initialize outside the loop
-        velocity_pid = PIDController(self.vel_kP, self.vel_kI, self.vel_kD)
+def set_velocity(self, target_vel):
+    """Moves the motor at a specific velocity using PID control."""
+    previous_position = Decimal(self.update_position())
+    previous_time = Decimal(time.time())
+    pid_output_ema = Decimal(0)  # Initialize outside the loop
+    velocity_pid = PIDController(self.vel_kP, self.vel_kI, self.vel_kD)
 
-        while True:
-            time.sleep(0.01)  # Control the loop rate to be more consistent
-            current_time = time.time()
-            elapsed_time = max(current_time - previous_time, 1e-5)  # Avoid division by very small number
-            
-            current_position = self.update_position()
-            ticks_per_revolution = 1320.0
-            # Convert ticks to radians per second
-            current_vel = (current_position - previous_position) * 2.0 * math.pi / (ticks_per_revolution * elapsed_time)
-            
-            if abs(target_vel - current_vel) < self.vel_tolerance:
-                self.set(0)  # Stop the motor
-                break
+    while True:
+        time.sleep(0.01)  # Control the loop rate to be more consistent
+        current_time = Decimal(time.time())
+        elapsed_time = max(current_time - previous_time, Decimal('0.001'))  # Avoid division by very small number
 
-            pid_output = velocity_pid.calculate(current_vel, target_vel)
-            pid_output_ema = exponential_moving_average(pid_output, pid_output_ema, alpha=0.1)
-            control_effort = max(min(pid_output_ema, 100), -100)
-            self.set(control_effort)
-            
-            print(">>>>>> Current Vel", current_vel)
-            
-            previous_position = current_position
-            previous_time = current_time
+        current_position = Decimal(self.update_position())
+        ticks_per_revolution = Decimal('1320.0')
+        # Convert ticks to radians per second
+        current_vel = (current_position - previous_position) * Decimal('2.0') * Decimal(math.pi) / (ticks_per_revolution * elapsed_time)
+
+        if abs(target_vel - Decimal(current_vel)) < self.vel_tolerance:
+            self.set(0)  # Stop the motor
+            break
+
+        pid_output = velocity_pid.calculate(current_vel, target_vel)
+        pid_output_ema = exponential_moving_average(Decimal(pid_output), pid_output_ema, alpha=Decimal('0.1'))
+        control_effort = max(min(pid_output_ema, Decimal('100')), Decimal('-100'))
+        self.set(float(control_effort))
+
+        print(">>>>>> Current Vel", current_vel)
+
+        previous_position = current_position
+        previous_time = current_time
 
 class Servo:
     """ The class to represent the gripper's servo. """
