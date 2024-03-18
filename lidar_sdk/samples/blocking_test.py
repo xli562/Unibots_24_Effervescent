@@ -23,17 +23,19 @@ def update_plot(new_theta, new_r):
     ax.autoscale_view(True, True, True)
     fig.canvas.draw()
     fig.canvas.flush_events()
+    plt.pause(0.01)
 
 # Thread function for capturing output
 def capture_output(pipe, data_queue):
-    print(f"Data: {line}", end='')
-    pattern = re.compile(r'\[\d+: ([\d.]+), ([\d.]+)\]')
+    pattern = re.compile(r'\[(\d+): ([\d.]+), ([\d.]+)\]')
     for line in iter(pipe.readline, ''):
         match = pattern.search(line)
         if match:
-            new_r = float(match.group(1))  # Radius (distance)
-            new_theta = np.radians(float(match.group(2)))  # Angle, converted to radians
+            index = int(match.group(1))
+            new_r = float(match.group(2))  # Radius (distance)
+            new_theta = np.radians(float(match.group(3)))  # Angle, converted to radians
             data_queue.append((new_theta, new_r))  # Append tuple to queue
+            print(f"Data: [Index: {index}, Distance: {new_r}, Angle: {new_theta}]\n", end = '')
 
 # The path to the directory where you want to run the command
 working_directory = '/home/eff/Desktop/Unibots_24_Effervescent/lidar_sdk/build'
@@ -53,6 +55,7 @@ try:
             new_theta, new_r = data_queue.pop(0)  # Get new data
             update_plot(new_theta, new_r)  # Update the plot
         time.sleep(0.1)  # Briefly sleep to yield control
+        plot.show()
 finally:
     stdout_thread.join()
     plt.ioff()
