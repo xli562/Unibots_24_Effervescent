@@ -75,13 +75,19 @@ class Ultrasound:
         return self.distances[3] < 10
         # when object detected within 10cm, object detected
 
-    
-# Example usage:
-if __name__ == "__main__":
-    ultrasound = Ultrasound()  # Create an Ultrasound object
-    while True:
-        distances = ultrasound.receive_distances()
-        distances = ultrasound.get_distances()  
-        print("Distances:", distances)
-        time.sleep(0.1)  
+ultrasound = Ultrasound()
+while True:
+    distances = ultrasound.receive_distances()
+    distances = ultrasound.get_distances()  
+    print("Distances:", distances)
+    time.sleep(0.1)  
+
+# # Example usage:
+# if __name__ == "__main__":
+#     ultrasound = Ultrasound()  # Create an Ultrasound object
+#     while True:
+#         distances = ultrasound.receive_distances()
+#         distances = ultrasound.get_distances()  
+#         print("Distances:", distances)
+#         time.sleep(0.1)  
 
