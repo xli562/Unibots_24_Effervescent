@@ -59,7 +59,7 @@ int main(int argc, char *argv[])
             {
                 for (int i = 0; i < scan_data.vailtidy_point_num; i++)
                 {
-                    printf("[%d: %X, %X] \n", i, (scan_data.data[i]), scan_data.data[i].angle);
+                    printf("[%d: %f, %f] \n", i, (scan_data.data[i].distance * 0.001), scan_data.data[i].angle);
                 }
             }
         }

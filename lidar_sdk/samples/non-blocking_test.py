@@ -5,7 +5,7 @@ import threading
 working_directory = '/home/eff/Desktop/Unibots_24_Effervescent/lidar_sdk/build'
 
 # The command you want to run
-command = './blocking_test'  # Ensure this is executable in the target directory
+command = './non-blocking_test'  # Ensure this is executable in the target directory
 
 # Function to capture output from stdout
 def capture_output(pipe, label):
