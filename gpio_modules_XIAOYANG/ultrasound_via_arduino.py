@@ -6,11 +6,13 @@ import threading
 import time
 import struct
 
+NUM_OF_ULTRASOUND_SENSOR = 5
+
 class Ultrasound:
     def __init__(self, com_port="/dev/ttyACM1", baud_rate=115200):
         self.ser = serial.Serial(com_port, baud_rate)
-        self.distances = [0] * 5  # Left_Bottom, Left_Top, Right, Front, Back
-        self.updated_sensors = [False]*5
+        self.distances = [0] * NUM_OF_ULTRASOUND_SENSOR  # Left_Bottom, Left_Top, Right, Front, Back
+        self.updated_sensors = [False]*NUM_OF_ULTRASOUND_SENSOR
         self.updated = False # 用来判断是否所有UltrasoundSensor都更新了最新读数
         # 当不加入Threading，读取数据时会永远停留在receive_distances的while循环中。故需要加入Thread
         # 先测试阶段，先不放入Thread
@@ -26,7 +28,7 @@ class Ultrasound:
 
     def receive_distances(self):
         self.updated = False
-        self.updated_sensors = [False]*5
+        self.updated_sensors = [False] * NUM_OF_ULTRASOUND_SENSOR
         while not(self.updated):
             data_str = self.ser.readline().strip().decode('utf-8')
             readings = data_str.split(',')
@@ -49,29 +51,29 @@ class Ultrasound:
         else:
             self.receive_distances()
 
-    @property
-    def rugby_left(self):
-        if (self.updated):
-            return (self.distances[1] - self.distances[0]) >= 5
-            # rugby_left is True when the difference between top and bottom sensor > 5cm
+    # @property
+    # def rugby_left(self):
+    #     if (self.updated):
+    #         return (self.distances[1] - self.distances[0]) >= 5
+    #         # rugby_left is True when the difference between top and bottom sensor > 5cm
 
-    @property
-    def object_left(self):
-        return self.distances[1] < 10
-        # when object detected within 10cm, object detected
+    # @property
+    # def object_left(self):
+    #     return self.distances[1] < 10
+    #     # when object detected within 10cm, object detected
 
-    @property
-    def object_right(self):
-        return self.distances[2] < 10
-        # when object detected within 10cm, object detected
+    # @property
+    # def object_right(self):
+    #     return self.distances[2] < 10
+    #     # when object detected within 10cm, object detected
     
-    @property
-    def object_front(self):
-        return self.distances[3] < 10
-        # when object detected within 10cm, object detected
+    # @property
+    # def object_front(self):
+    #     return self.distances[3] < 10
+    #     # when object detected within 10cm, object detected
     
-    @property
-    def object_back(self):
+    # @property
+    # def object_back(self):
         return self.distances[3] < 10
         # when object detected within 10cm, object detected
 
