@@ -1,6 +1,6 @@
 import serial
 
-com_port="/dev/ttyUSB0"
+com_port="/dev/ttyACM1"
 baud_rate=115200
 ser = serial.Serial(com_port, baud_rate)
 while True:
