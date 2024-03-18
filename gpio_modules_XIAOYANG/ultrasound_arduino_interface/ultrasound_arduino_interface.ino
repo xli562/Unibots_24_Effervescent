@@ -3,19 +3,22 @@
 // #define ULTRASONIC_TRIGGER_PIN  6  // Arduino Digital
 // #define ULTRASONIC_ECHO_PIN     11  // Arduino Digital
 #define MAX_DISTANCE 400 // Maximum distance we want to ping for (in centimeters). Maximum sensor distance is rated at 400-500cm.
-#define NUM_ULTRASOUND 2
+#define NUM_ULTRASOUND 5
 
-int trigPins[NUM_ULTRASOUND] = {6,7};  //Left_Bottom, Left_Top, Right, Front, Back
-int echoPins[NUM_ULTRASOUND] = {11,12}; 
+int trigPins[NUM_ULTRASOUND] = {6,7,8,9,4};  //Left_Bottom, Right, Front, Back, Left_Top
+int echoPins[NUM_ULTRASOUND] = {11,12,13,10,5}; 
 
 NewPing ultrasound_sensors[NUM_ULTRASOUND]{
   NewPing(trigPins[0], echoPins[0], MAX_DISTANCE),
-  NewPing(trigPins[1], echoPins[1], MAX_DISTANCE)
+  NewPing(trigPins[1], echoPins[1], MAX_DISTANCE),
+  NewPing(trigPins[2], echoPins[2], MAX_DISTANCE),
+  NewPing(trigPins[3], echoPins[3], MAX_DISTANCE),
+  NewPing(trigPins[4], echoPins[4], MAX_DISTANCE)
 };
 
 
 void setup() {
-  Serial.begin(9600); // Initialize serial communication.
+  Serial.begin(115200); // Initialize serial communication.
 
 //   for (int i = 0; i < NUM_ULTRASOUND; i++) {
 //     ultrasound_sensors[i] = NewPing(trigPins[i], echoPins[i], MAX_DISTANCE);
