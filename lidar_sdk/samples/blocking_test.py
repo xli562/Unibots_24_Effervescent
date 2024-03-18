@@ -26,6 +26,7 @@ def update_plot(new_theta, new_r):
 
 # Thread function for capturing output
 def capture_output(pipe, data_queue):
+    print(f"Data: {line}", end='')
     pattern = re.compile(r'\[\d+: ([\d.]+), ([\d.]+)\]')
     for line in iter(pipe.readline, ''):
         match = pattern.search(line)
@@ -37,7 +38,7 @@ def capture_output(pipe, data_queue):
 # The path to the directory where you want to run the command
 working_directory = '/home/eff/Desktop/Unibots_24_Effervescent/lidar_sdk/build'
 # The command you want to run
-command = './non-blocking_test'  # Ensure this is executable in the target directory
+command = './blocking_test'  # Ensure this is executable in the target directory
 process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, bufsize=1, universal_newlines=True, cwd=working_directory, shell=True)
 
 # Data queue and thread setup
