@@ -16,7 +16,7 @@ class PIDController:
         derivative = (error - self.prev_error) / Decimal(dt)
         self.integral = self.integral + Decimal(error) * Decimal(dt)
 
-        control_effort = (self.P * Decimal(error)) + (self.I * self.integral) + (self.D * derivative)
+        control_effort = (Decimal(self.P) * Decimal(error)) + (Decimal(self.I) * self.integral) + (Decimal(self.D) * derivative)
 
         self.prev_error = Decimal(error)
         return control_effort
