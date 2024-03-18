@@ -11,7 +11,7 @@ NUM_OF_ULTRASOUND_SENSOR = 5
 class Ultrasound:
     def __init__(self, com_port="/dev/ttyACM1", baud_rate=115200):
         self.ser = serial.Serial(com_port, baud_rate)
-        self.distances = [0] * NUM_OF_ULTRASOUND_SENSOR  # Left_Bottom, Left_Top, Right, Front, Back
+        self.distances = [0] * NUM_OF_ULTRASOUND_SENSOR  # Left_Bottom, Right, Front, Back, Left_Top
         self.updated_sensors = [False]*NUM_OF_ULTRASOUND_SENSOR
         self.updated = False # 用来判断是否所有UltrasoundSensor都更新了最新读数
         # 当不加入Threading，读取数据时会永远停留在receive_distances的while循环中。故需要加入Thread
@@ -51,37 +51,47 @@ class Ultrasound:
         else:
             self.receive_distances()
 
-    # @property
-    # def rugby_left(self):
-    #     if (self.updated):
-    #         return (self.distances[1] - self.distances[0]) >= 5
-    #         # rugby_left is True when the difference between top and bottom sensor > 5cm
+    @property
+    def rugby_left(self):
+        if (self.updated):
+            return (self.distances[4] - self.distances[0]) >= 5
+            # rugby_left is True when the difference between top and bottom sensor > 5cm
 
-    # @property
-    # def object_left(self):
-    #     return self.distances[1] < 10
-    #     # when object detected within 10cm, object detected
-
-    # @property
-    # def object_right(self):
-    #     return self.distances[2] < 10
-    #     # when object detected within 10cm, object detected
-    
-    # @property
-    # def object_front(self):
-    #     return self.distances[3] < 10
-    #     # when object detected within 10cm, object detected
-    
-    # @property
-    # def object_back(self):
-        return self.distances[3] < 10
+    @property
+    def object_left(self):
+        return (self.distances[4] < 10 and self.distances[4] > 0)
         # when object detected within 10cm, object detected
+
+    @property
+    def object_right(self):
+        return (self.distances[1] < 10 and self.distances[1] > 0)
+        # when object detected within 10cm, object detected
+    
+    @property
+    def object_front(self):
+        return (self.distances[2] < 10 and self.distances[2] > 0)
+        # when object detected within 10cm, object detected
+    
+    @property
+    def object_back(self):
+        return (self.distances[3] < 10 and self.distances[3] > 0)
+        # when object detected within 10cm, object detected
+
+    @property
+    def check_obstacle(self):
+        obstacle = []
+        for i in range(1,5):
+            if self.distances[i] < 10 and self.distances[i] > 0:
+                obstacle.append(i)
+        return obstacle
+
 
 ultrasound = Ultrasound()
 while True:
-    distances = ultrasound.receive_distances()
+    ultrasound.receive_distances()
     distances = ultrasound.get_distances()  
     print("Distances:", distances)
+    print("Obstacles at directions: {}".format(ultrasound.check_obstacle))
     time.sleep(0.1)  
 
 # # Example usage:
