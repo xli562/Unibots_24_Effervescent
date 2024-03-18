@@ -7,7 +7,7 @@ import time
 import struct
 
 class Ultrasound:
-    def __init__(self, com_port="/dev/ttyUSB0", baud_rate=115200):
+    def __init__(self, com_port="/dev/ttyACM1", baud_rate=115200):
         self.ser = serial.Serial(com_port, baud_rate)
         self.distances = [0] * 5  # Left_Bottom, Left_Top, Right, Front, Back
         self.updated_sensors = [False]*5
