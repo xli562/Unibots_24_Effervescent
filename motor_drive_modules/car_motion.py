@@ -16,8 +16,7 @@ bot.create_receive_threading()
 # Enable automatic data sending
 # If enable=True, the underlying expansion module sends data every 40 milliseconds.  If enable=False, the port is not sent.
 # Forever =True for permanent, =False for temporary
-enable = True
-bot.set_auto_report_state(enable, forever=False)
+bot.set_auto_report_state(True)
 
 speed_x = 5
 speed_y = 0

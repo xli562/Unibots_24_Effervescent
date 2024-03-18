@@ -2,10 +2,20 @@
 
 
 Mon. 2024/03/18
-    TODO: 
-        - run robot in a straight line
+    Ultrasound
+        - Built ultrasound base-level interface.
+    Lidar
+        - Built lidar base-level interface.
     Localisation
         - Currently using the decimal library. If this proves to be a speed constraint, can use standard float type of python.
+        - If using car_motion.py, 
+            - x,y,z = (2.3, 0, 10) for straight motion in +-X
+            - Does not work perfectly if changed battery
+        - Use IMU for heading & side-drift correction
+        - Decided to use event-driven instead of fixed-route navigation
+    TODO:
+        - Lidar fit rectangle for absolute positioning
+        - IMU drift calibration
 
 
 
