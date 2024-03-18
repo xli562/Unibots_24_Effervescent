@@ -39,11 +39,11 @@ class Motor:
         self.vel_kD = 0
         self.position = self.update_position()
 
-    def set(self, power, reverse=False):
+    def set_duty_cycle(self, power, reverse=False):
         """ Sets the motor's drive power, with an option to reverse direction. """
         """ Power range from -100 to 100 """
         self.output_power = -power if reverse else power
-        motor_velocity_array[self._port] = self.output_power
+        motor_velocity_array[self._port - 1] = self.output_power
         bot.set_motor(motor_velocity_array[0], motor_velocity_array[1], motor_velocity_array[2], motor_velocity_array[3])
 
     def update_position(self):
@@ -55,7 +55,7 @@ class Motor:
 
     def set_free_drive(self):
         """Sets the motor to free drive mode."""
-        self.set(0)
+        self.set_duty_cycle(0)
 
     def set_pid_coefficients(self, kP, kI, kD):
         self.kP = kP
@@ -68,7 +68,7 @@ class Motor:
         self.vel_kD = vel_kD
 
     def set_position(self, target_position):
-        """Moves the motor to a specific position using PID control."""
+        """ Moves the motor to a specific position using PID control. """
         self.update_position()
         position_pid = PIDController(self.kP, self.kI, self.kD)
         while abs(target_position - self.position) >= self.tolerance:
@@ -76,10 +76,10 @@ class Motor:
             pid_output = position_pid.calculate(self.position, target_position)
             # Ensure control effort is within [-100, 100] range
             control_effort = max(min(pid_output, 100), -100)
-            self.set(control_effort)
+            self.set_duty_cycle(control_effort)
             print(">>>>>>", target_position - self.position)
             time.sleep(0.001)
-        self.set(0)  # Stop the motor once target position is within tolerance
+        self.set_duty_cycle(0)  # Stop the motor once target position is within tolerance
 
     def set_velocity(self, target_vel):
         """Moves the motor at a specific velocity using PID control."""
@@ -99,13 +99,13 @@ class Motor:
             current_vel = (current_position - previous_position) * Decimal('2.0') * Decimal(math.pi) / (ticks_per_revolution * elapsed_time)
 
             if abs(target_vel - Decimal(current_vel)) < self.vel_tolerance:
-                self.set(0)  # Stop the motor
+                self.set_duty_cycle(0)  # Stop the motor
                 break
 
             pid_output = velocity_pid.calculate(current_vel, target_vel)
             pid_output_ema = exponential_moving_average(Decimal(pid_output), pid_output_ema, alpha=Decimal('0.1'))
             control_effort = max(min(pid_output_ema, Decimal('100')), Decimal('-100'))
-            self.set(float(control_effort))
+            self.set_duty_cycle(float(control_effort))
 
             print(">>>>>> Current Vel", current_vel)
 
@@ -295,18 +295,18 @@ class MecanumDrive:
 
 
 def testmotor():
-    # motor_0 = Motor(0)
     # motor_1 = Motor(1)
     # motor_2 = Motor(2)
     # motor_3 = Motor(3)
+    # motor_4 = Motor(4)
 
-    # motor_0.set_pid_coefficient(0.8, 5, 6)
     # motor_1.set_pid_coefficient(0.8, 5, 6)
     # motor_2.set_pid_coefficient(0.8, 5, 6)
     # motor_3.set_pid_coefficient(0.8, 5, 6)
+    # motor_4.set_pid_coefficient(0.8, 5, 6)
 
     # threads = []
-    # motors = [motor_0, motor_1, motor_2, motor_3]
+    # motors = [motor_1, motor_2, motor_3, motor_4]
 
     # def set_motor_positions(positions):
     #     threads = []
@@ -320,9 +320,9 @@ def testmotor():
     # set_motor_positions([5000, 5000, 5000, 5000])
     # set_motor_positions([0, 0, 0, 0])
 
-    motor_0 = Motor(0)
-    motor_0.set_vel_pid_coefficients(10, 0, 0)
-    motor_0.set_velocity(10)
+    motor = Motor(1)
+    motor.set_pid_coefficients(0.8, 5, 6)
+    motor.set_position(motor.update_position()+1000)
 
 
 
