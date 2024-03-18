@@ -14,8 +14,10 @@ motor_velocity_array = [0,0,0,0]
 
 bot = Rosmaster()
 bot.create_receive_threading()
-# Enable auto data sending, and meant to be temporary (not forever)
-bot.set_auto_report_state(enable = True, forever = False)
+# Enable auto data sending every 40ms.
+bot.set_auto_report_state(enable = True)
+# Clear cache sent from the Rosmaster board
+bot.clear_auto_report_data()
 
 def exponential_moving_average(new_value, previous_ema, alpha=0.1):
     return alpha * new_value + (1 - alpha) * previous_ema
@@ -23,7 +25,7 @@ def exponential_moving_average(new_value, previous_ema, alpha=0.1):
 class Motor:
     def __init__(self, port):
         """ Initializes the motor on the given port. """
-        self.port = port    # port of the motor
+        self._port = port    # port of the motor
         self.output_power = 0   # output pwr, determines pwm ratio
         self.position = 0   # position of encoder
         self.tolerance = 10
@@ -41,14 +43,13 @@ class Motor:
         """ Sets the motor's drive power, with an option to reverse direction. """
         """ Power range from -100 to 100 """
         self.output_power = -power if reverse else power
-        motor_velocity_array[self.port] = self.output_power
+        motor_velocity_array[self._port] = self.output_power
         bot.set_motor(motor_velocity_array[0], motor_velocity_array[1], motor_velocity_array[2], motor_velocity_array[3])
 
     def update_position(self):
         """ Updates the motor's position (acquiring from bot) """
         encoder_readings = bot.get_motor_encoder()
-        position = encoder_readings[self.port]
-        self.position = position
+        self.position = encoder_readings[self._port - 1]
         time.sleep(0.001)
         return self.position
 
@@ -56,12 +57,12 @@ class Motor:
         """Sets the motor to free drive mode."""
         self.set(0)
 
-    def set_pid_coefficient(self, kP, kI, kD):
+    def set_pid_coefficients(self, kP, kI, kD):
         self.kP = kP
         self.kI = kI
         self.kD = kD
 
-    def set_vel_pid_coefficient(self, vel_kP, vel_kI, vel_kD):
+    def set_vel_pid_coefficients(self, vel_kP, vel_kI, vel_kD):
         self.vel_kP = vel_kP
         self.vel_kI = vel_kI
         self.vel_kD = vel_kD
@@ -144,6 +145,16 @@ class Servo:
         ''' TODO: Calibration '''
         self.set_position(self._release_position)
 
+    def test_run():
+        """ Tests basic servo functions """
+        servo = Servo(1)
+        print(servo.get_position())
+        while 1:
+            servo.grip()
+            time.sleep(1)
+            servo.release()
+            time.sleep(1)
+
 
 class Intake:
     """ Class to drive the intake motor.
@@ -188,21 +199,30 @@ class Intake:
         self._unload_power = abs(power)
 
     def eat(self, power:int=None):
-        """ Intake the table tennis balls. """
-        if not power is None:
-            self._eat_power = abs(power)
-        self._set(self._eat_power)
+        """ Intake the table tennis balls. 
+        power: optional, sets intaking power for the current action.
+        To change intaking power permanently, use set_eat_power() """
+        power = self._eat_power if power is None else abs(power)
+        self._set(power)
 
     def unload(self, power:int=None):
-        """ Intake the table tennis balls. """
-        if not power is None:
-            self._unload_power = abs(power)
-        self._set(-self._unload_power)
-    
-    
+        """ Unload the table tennis balls. 
+        power: optional, sets unloading power for the current action.
+        To change unloading power permanently, use set_unload_power() """
+        power = self._unload_power if power is None else abs(power)
+        self._set(-power)
+
     def set_free_drive(self):
         """Sets the motor to free drive mode."""
         self._set(0)
+
+    def test_run():
+        """ Tests basic intaking functions """
+        intake = Intake()
+        intake.eat()
+        intake.unload(50)
+        time.sleep(2)
+        intake.set_free_drive()
 
 
 class MecanumDrive:
@@ -301,26 +321,12 @@ def testmotor():
     # set_motor_positions([0, 0, 0, 0])
 
     motor_0 = Motor(0)
-    motor_0.set_vel_pid_coefficient(10, 0, 0)
+    motor_0.set_vel_pid_coefficients(10, 0, 0)
     motor_0.set_velocity(10)
 
 
-def test_servo():
-    """ test basic servo functions """
-    servo = Servo(1)
-    print(servo.get_position())
-    while 1:
-        servo.grip()
-        time.sleep(1)
-        servo.release()
-        time.sleep(1)
 
-def test_intake():
-    intake = Intake()
-    intake.eat()
-    input()
-    intake.unload(50)
-    time.sleep(2)
-    intake.set_free_drive()
+
+
 
 test_intake()

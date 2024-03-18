@@ -340,9 +340,8 @@ class Rosmaster(object):
         else:
             return int(value)
 
-    # 开启接收和处理数据的线程
-    # Start the thread that receives and processes data
     def create_receive_threading(self):
+        """ 开启接收和处理数据的线程，只能启动一次，所有读取数据的功能都是基于此方法 """
         try:
             if self.__uart_state == 0:
                 name1 = "task_serial_receive"
@@ -356,14 +355,11 @@ class Rosmaster(object):
             print('---create_receive_threading error!---')
             pass
     
-    # 单片机自动返回数据状态位，默认为开启，如果设置关闭会影响部分读取数据功能。
-    # enable=True,底层扩展板会每隔10毫秒发送一包数据，总共四包不同数据，所以每包数据每40毫秒刷新一次。enable=False，则不发送。
-    # forever=True永久保存，=False临时作用。
-    # The MCU automatically returns the data status bit, which is enabled by default. If the switch is closed, the data reading function will be affected.  
-    # enable=True, The underlying expansion board sends four different packets of data every 10 milliseconds, so each packet is refreshed every 40 milliseconds. 
-    # If enable=False, the report is not sent.  
-    # forever=True for permanent, =False for temporary
+    
     def set_auto_report_state(self, enable, forever=False):
+        """ 单片机自动返回数据状态位，默认为开启，如果设置关闭会影响部分读取数据功能。
+        enable=True,底层扩展板会每隔10毫秒发送一包数据，总共四包不同数据，所以每包数据每40毫秒刷新一次。enable=False，则不发送。
+        forever=True永久保存 in the ROM of the driver board's microcontroller，=False临时作用, resets upon reboot。 """
         try:
             state1 = 0
             state2 = 0
