@@ -2,5 +2,5 @@ from RosmasterBoard import Rosmaster
 
 bot = Rosmaster()
 while True:
-    bot.get_imu_attitude_data()
-    print("Roll: {}, Pitch: {}, Yaw: {}")
+    roll, pitch, yaw = bot.get_imu_attitude_data()
+    print(f"Roll: {roll}, Pitch: {pitch}, Yaw: {yaw}")
