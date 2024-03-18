@@ -1,3 +1,4 @@
+import re
 import subprocess
 import threading
 import matplotlib.pyplot as plt
@@ -30,6 +31,7 @@ def update_plot(new_theta, new_r):
 def capture_and_plot(pipe):
     pattern = re.compile(r'\[(\d+): ([\d.]+), ([\d.]+)\]')
     for line in iter(pipe.readline, ''):
+        print(f"Data: {line}", end='')
         match = pattern.search(line)
         if match:
             # No need for index in plotting, but it's parsed in case you need it
@@ -46,16 +48,16 @@ def capture_and_plot(pipe):
 process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, bufsize=1, universal_newlines=True, cwd=working_directory, shell=True)
 
 # Create threads to handle stdout and stderr output
-stdout_thread = threading.Thread(target=capture_and_plot, args=(process.stdout, 'STDOUT'))
-stderr_thread = threading.Thread(target=capture_and_plot, args=(process.stderr, 'STDERR'))
+stdout_thread = threading.Thread(target=capture_and_plot, args=(process.stdout,))
 
 # Start the threads
 stdout_thread.start()
-stderr_thread.start()
 
-# Wait for the output capture threads to finish (if the process is continuous, this might never happen without an external stop condition)
-stdout_thread.join()
-stderr_thread.join()
-
-# Optionally, add a mechanism to terminate the process safely
-# process.terminate()
+# Main loop to keep the script alive
+try:
+    while process.poll() is None:
+        time.sleep(0.1)
+finally:
+    stdout_thread.join()
+    plt.ioff()  # Turn off interactive mode
+    plt.show()  # Show the final plot
