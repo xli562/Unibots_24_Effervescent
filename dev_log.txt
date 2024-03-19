@@ -1,6 +1,14 @@
 *** UniBots 2024 electronics & programming log ***
 
-
+Tue. 2024/03/19
+    Localisation
+        - If using car_motion.py, 
+            - x,y,z = (0, 1, -2.5) for straight motion in +-X
+        - Completed IMU calibration by measuring a yaw drift-rate. This is subtracted from subsequent IMU measurements.
+        - Wrote the Chassis class. Includes all controls using IMU.
+        - Added proportional control through IMU data for straight motion for +X-direction. kP = 1 works quiet well
+        - TODO: Need to test +Y direction kP value.
+    
 Mon. 2024/03/18
     Ultrasound
         - Built ultrasound base-level interface.
