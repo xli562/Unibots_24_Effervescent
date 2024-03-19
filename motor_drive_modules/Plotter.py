@@ -1,3 +1,5 @@
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 import numpy as np
@@ -8,7 +10,10 @@ class Plotter:
         pass
 
 
-    def plot_lidar_fit_square(fit_square:function, get_last_cycle_readings:function):
+    def plot_lidar_fit_square(self, fit_square, get_last_cycle_readings):
+        """ 
+        :param fit_square: a function
+        :param get_last_cycle_readings: a function """
         def update_plot(frame):
             plt.cla()  # Clear the current axes
             square_vertices:list = fit_square()
@@ -32,6 +37,7 @@ class Plotter:
         plt.figure(figsize=(8, 8))
 
         # Create an animation that updates the plot
-        ani = FuncAnimation(plt.gcf(), update_plot, interval=1000)  # Update every 1000 ms
+        ani = FuncAnimation(plt.gcf(), update_plot, interval=1000, frames=20)  # Update every 1000 ms
 
-        plt.show()
+        ani.save('myanimation.mp4', writer='ffmpeg')
+        # plt.show()

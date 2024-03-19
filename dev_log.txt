@@ -1,6 +1,17 @@
 *** UniBots 2024 electronics & programming log ***
 
 Tue. 2024/03/19
+    Lidar
+        - Can now output _something_ as a prediction of the square of the arena
+        - Plotting error
+            - Plotting error when trying to show real-time plot of the point cloud and the predicted rectangle. 
+            - This turns out to be a problem of the python versions installed in the Nano.
+            - GUI interfaces *must* be installed glabally. The python3.10 for our project is manually installed and not part of the system python, thus it cannot access the GUI infrastructure.
+            Potential solutions
+                - 1 (simplest) Save the animation as a video file and open the video to see the animated plot. This is already half-working when I left the DPO. It displays an empty graph without any points on them. This is either due to lidar not returning data, or these data not properly plotted. TODO: investigate tomorrow.
+                - 2 Use a docker to build an entire python3.10 environment and work from there.
+                - 3 Uninstall and recompile python3.10, with tkinter now installed. See ChatGPT history for details. This seems to be similar to what I did when installing the system, and is also TODO: worth a try.
+
     Localisation
         - If using car_motion.py, 
             - x,y,z = (0, 1, -2.5) for straight motion in +-X
