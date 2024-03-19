@@ -1,7 +1,6 @@
-a = []
-b = []
+import numpy as np
 
-b = [1,2,3]
-a = b
-b = []
-print(a)
+
+print(np.array([1,2,3]))
+
+

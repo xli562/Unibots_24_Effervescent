@@ -1,7 +1,8 @@
-import numpy as np
-from typing import List, Tuple
+from Chassis import Buzzer
 
 import subprocess, threading, re
+import numpy as np
+from typing import List, Tuple
 
 
 class Lidar:
@@ -13,11 +14,24 @@ class Lidar:
         # A list of growing length to store data for the current cycle
         self._current_cycle_readings = []
         self._start_autoreceive_readings_thread()
+        self._check_connection(timeout=5)
     
+
+    def _check_connection(self, timeout=5):
+        """ Checks the Lidar connection.
+        If the last reading is still empty after 5 seconds, 
+        Buzz the buzzer in a specific pattern. """
+        threading.Timer(timeout, check_reading).start()
+        def check_reading():
+            if not self._last_reading:
+                buzzer = Buzzer()
+                buzzer.beep_pattern('....  .   .  ', 5)
+
+
     def _start_autoreceive_readings_thread(self):
         """ Creates thread to listen to cpp stdout. """
         # The path to the directory where you want to run the command
-        cpp_file_folder = '/home/eff/Desktop/Unibots_24_Effervescent/lidar_sdk/build'
+        cpp_file_folder = './lidar_sdk/build'
         # The command you want to run
         cpp_file = './blocking_test' if self._blocking else './non-blocking_test'
         self.process = subprocess.Popen(cpp_file, stdout=subprocess.PIPE, 
@@ -35,6 +49,7 @@ class Lidar:
                     r = float(match.group(2))  # Radius (distance)
                     theta = float(match.group(3))  # Angle
                     self._last_reading = (index, r, theta)
+                    self._current_cycle_readings.append(self._last_reading)
                     if index == 0:
                         # Update fresh data into last-cycle-reading
                         self._last_cycle_readings = self._current_cycle_readings
@@ -42,9 +57,8 @@ class Lidar:
                         self._current_cycle_readings = []
 
         # Data queue and thread setup
-        data_queue = []
         stdout_thread = threading.Thread(target=capture_output, 
-                                         args=(self.process.stdout, data_queue))
+                                         args=(self.process.stdout,))
         stdout_thread.start()
 
     def get_one_reading(self) -> Tuple[int, float, float]:
@@ -182,5 +196,6 @@ class Lidar:
 # Example usage
 if __name__ == "__main__":
     lidar = Lidar()
-    square_corners = lidar.fit_square()
-    print(square_corners)
+    print(lidar._last_reading)
+    # square_corners = lidar.fit_square()
+    # print(square_corners)
