@@ -101,14 +101,17 @@ class Lidar:
 
 
     def _fit_square_edges(self, points: List[Tuple[float, float]]) -> List[Tuple[float, float]]:
-        """  Fit a square to the given points. This is a simplified version and might need
-        adjustments based on actual Lidar data quality. """
+        """  Fit a square to the given points. This is a simplified version 
+        and might need adjustments based on actual Lidar data quality. """
         
         # Simplified approach: Find the bounding box and assume it's the square
-        min_x = min(points, key=lambda x: x[0])[0]
-        max_x = max(points, key=lambda x: x[0])[0]
-        min_y = min(points, key=lambda x: x[1])[1]
-        max_y = max(points, key=lambda x: x[1])[1]
+        if points:
+            min_x = min(points, key=lambda x: x[0])[0]
+            max_x = max(points, key=lambda x: x[0])[0]
+            min_y = min(points, key=lambda x: x[1])[1]
+            max_y = max(points, key=lambda x: x[1])[1]
+        else:
+            min_x, min_y, max_x, max_y = (0,0,0,0)
 
         return [(min_x, min_y), (min_x, max_y), (max_x, max_y), (max_x, min_y)]
 
