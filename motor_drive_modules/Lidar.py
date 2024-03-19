@@ -17,6 +17,12 @@ class Lidar:
         self._check_connection(timeout=5)
     
 
+        def __new__(cls, *args, **kwargs):
+            if not cls._instance:
+                cls._instance = super(Lidar, cls).__new__(cls, *args, **kwargs)
+            return cls._instance
+
+
     def _check_connection(self, timeout=5):
         """ Checks the Lidar connection.
         If the last reading is still empty after 5 seconds, 
@@ -60,37 +66,6 @@ class Lidar:
         stdout_thread = threading.Thread(target=capture_output, 
                                          args=(self.process.stdout,))
         stdout_thread.start()
-
-    def get_one_reading(self) -> Tuple[int, float, float]:
-        """ Returns a tuple of (measurement_index, distance, angle). """
-        # TODO: 2024/03/19: tidy up this function
-        cpp_file_folder = './lidar_sdk/build'
-
-        # Function to capture output from stdout
-        def capture_output(pipe, label):
-            for line in iter(pipe.readline, ''):
-                print(f"{label}: {line}", end='')
-        
-        # Start the process
-        process = subprocess.Popen(cpp_file, stdout=subprocess.PIPE, 
-                                   stderr=subprocess.PIPE, bufsize=1, 
-                                   universal_newlines=True, 
-                                   cwd=cpp_file_folder, shell=True)
-
-        # Create threads to handle stdout and stderr output
-        stdout_thread = threading.Thread(target=capture_output, 
-                                         args=(process.stdout))
-
-        # Start the threads
-        stdout_thread.start()
-
-        # Wait for the output capture threads to finish (if the process is continuous, this might never happen without an external stop condition)
-        stdout_thread.join()
-
-        # Optionally, add a mechanism to terminate the process safely
-        # process.terminate()
-
-        return [(i, np.random.uniform(0.02, 12.0), np.random.uniform(0.0, 360.0)) for i in range(450)]
 
 
     def _polar_to_cartesian(self, r: float, theta: float) -> Tuple[float, float]:
@@ -202,5 +177,6 @@ class Lidar:
 if __name__ == "__main__":
     lidar = Lidar()
     print(lidar._last_reading)
-    # square_corners = lidar.fit_square()
-    # print(square_corners)
+    while 1:
+        square_corners = lidar.fit_square()
+        print(square_corners)
