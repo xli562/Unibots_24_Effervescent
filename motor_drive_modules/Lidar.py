@@ -21,11 +21,11 @@ class Lidar:
         """ Checks the Lidar connection.
         If the last reading is still empty after 5 seconds, 
         Buzz the buzzer in a specific pattern. """
-        threading.Timer(timeout, check_reading).start()
         def check_reading():
             if not self._last_reading:
                 buzzer = Buzzer()
                 buzzer.beep_pattern('....  .   .  ', 5)
+        threading.Timer(timeout, check_reading).start()
 
 
     def _start_autoreceive_readings_thread(self):
