@@ -1,4 +1,5 @@
 from Chassis import Buzzer
+from Plotter import Plotter
 
 import subprocess, threading, re
 import numpy as np
@@ -15,6 +16,7 @@ class Lidar:
         self._current_cycle_readings = []
         self._start_autoreceive_readings_thread()
         self._check_connection(timeout=5)
+        self._new_data_available = False
     
 
         def __new__(cls, *args, **kwargs):
@@ -91,17 +93,6 @@ class Lidar:
         return [(min_x, min_y), (min_x, max_y), (max_x, max_y), (max_x, min_y)]
 
 
-    def fit_square(self) -> List[Tuple[float, float]]:
-        """ Reads from the lidar, and outputs the coordinates of the square arena's four corners
-        in polar coordinates (r, theta). """
-        filtered_points = self._filter_robots(self._last_cycle_readings)  # Filter out robot readings
-        square_corners_cartesian = self._fit_square_edges(filtered_points)  # Fit square edges
-
-        # Convert corners back to polar coordinates
-        square_corners_polar = [(np.sqrt(x**2 + y**2), np.degrees(np.arctan2(y, x))) for x, y in square_corners_cartesian]
-        return square_corners_polar
-    
-
     def _filter_robots(self, readings:List[Tuple[int, float, float]], 
                                     by_angle:bool=False,
                                     max_robot_angle=60, 
@@ -173,10 +164,36 @@ class Lidar:
         return filtered_points
 
 
+    def fit_square(self) -> List[Tuple[float, float]]:
+        """ Reads from the lidar, and outputs the coordinates of the square arena's four corners
+        in polar coordinates (r, theta). """
+        filtered_points = self._filter_robots(self._last_cycle_readings)  # Filter out robot readings
+        square_corners_cartesian = self._fit_square_edges(filtered_points)  # Fit square edges
+
+        # Convert corners back to polar coordinates
+        square_corners_polar = [(np.sqrt(x**2 + y**2), np.degrees(np.arctan2(y, x))) for x, y in square_corners_cartesian]
+        return square_corners_polar
+    
+
+    def get_last_cycle_readings(self) -> list:
+        """ This function reads from a cached variable
+        and takes minimal processing effort """
+        return self._last_cycle_readings
+    
+
+    def get_last_reading(self) -> tuple:
+        """ This function reads from a cached variable
+        and takes minimal processing effort """
+        return self._last_reading
+
+
+
 # Example usage
 if __name__ == "__main__":
     lidar = Lidar()
     print(lidar._last_reading)
+    plotter = Plotter()
+    plotter.plot_lidar_fit_square(lidar.fit_square, lidar.get_last_cycle_readings)
     while 1:
         square_corners = lidar.fit_square()
         print(square_corners)
