@@ -1,29 +1,8 @@
 import subprocess
 import threading
-import matplotlib.pyplot as plt
 import numpy as np
 import re
-import time
 
-# Initialize matplotlib in interactive mode
-plt.ion()
-
-# Setup the polar plot
-fig, ax = plt.subplots(subplot_kw={'projection': 'polar'})
-r_data, theta_data = [], []
-line, = ax.plot(theta_data, r_data)
-
-# Function to update plot (called from the main thread)
-def update_plot(new_theta, new_r):
-    r_data.append(new_r)
-    theta_data.append(new_theta)
-    line.set_xdata(theta_data)
-    line.set_ydata(r_data)
-    ax.relim()
-    ax.autoscale_view(True, True, True)
-    fig.canvas.draw()
-    fig.canvas.flush_events()
-    plt.pause(0.01)
 
 # Thread function for capturing output
 def capture_output(pipe, data_queue):
@@ -38,25 +17,14 @@ def capture_output(pipe, data_queue):
             print(f"Data: [Index: {index}, Distance: {new_r}, Angle: {new_theta}]\n", end = '')
 
 # The path to the directory where you want to run the command
-working_directory = '/home/eff/Desktop/Unibots_24_Effervescent/lidar_sdk/build'
+cpp_file_folder = '/home/eff/Desktop/Unibots_24_Effervescent/lidar_sdk/build'
 # The command you want to run
-command = './blocking_test'  # Ensure this is executable in the target directory
-process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, bufsize=1, universal_newlines=True, cwd=working_directory, shell=True)
+cpp_file = './blocking_test'  # Ensure this is executable in the target directory
+process = subprocess.Popen(cpp_file, stdout=subprocess.PIPE, stderr=subprocess.PIPE, bufsize=1, universal_newlines=True, cwd=cpp_file_folder, shell=True)
 
 # Data queue and thread setup
 data_queue = []
 stdout_thread = threading.Thread(target=capture_output, args=(process.stdout, data_queue))
 stdout_thread.start()
 
-try:
-    while process.poll() is None or stdout_thread.is_alive():
-        # Process any new data in the queue
-        while data_queue:
-            new_theta, new_r = data_queue.pop(0)  # Get new data
-            update_plot(new_theta, new_r)  # Update the plot
-        time.sleep(0.1)  # Briefly sleep to yield control
-        plot.show()
-finally:
-    stdout_thread.join()
-    plt.ioff()
-    plt.show()
+stdout_thread.join()
