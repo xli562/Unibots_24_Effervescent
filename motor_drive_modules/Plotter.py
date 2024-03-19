@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
+import numpy as np
 
 
 class Plotter:
@@ -20,8 +21,9 @@ class Plotter:
 
             # Plot the points from the last cycle readings
             if cycle_readings:
-                readings_x, readings_y = zip(*cycle_readings)  # This unpacks the cycle readings into x and y coordinates
-                plt.scatter(readings_x, readings_y, s=10)  # Plot the points as small dots
+                readings_r, readings_theta = zip(*cycle_readings)  # This unpacks the cycle readings into x and y coordinates
+                plt.scatter(readings_r * np.cos(np.radians(readings_theta)), 
+                            readings_r * np.sin(np.radians(readings_theta)), s=10)  # Plot the points as small dots
 
             plt.xlim(-10, 10)  # Adjust as needed
             plt.ylim(-10, 10)  # Adjust as needed
