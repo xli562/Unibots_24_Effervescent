@@ -1,7 +1,7 @@
-import sys
-print(sys.path)
+a = []
+b = []
 
-
-import serial as np
-
-print(1)
+b = [1,2,3]
+a = b
+b = []
+print(a)

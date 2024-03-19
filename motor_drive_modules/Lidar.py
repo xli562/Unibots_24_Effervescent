@@ -1,20 +1,56 @@
 import numpy as np
 from typing import List, Tuple
 
-import subprocess
-import threading
+import subprocess, threading, re
 
 
 class Lidar:
     def __init__(self):
         self._blocking = False
+        self._last_reading = ()
+        # A list of fixed length 450 to store data for the last complete cycle
+        self._last_cycle_readings = []
+        # A list of growing length to store data for the current cycle
+        self._current_cycle_readings = []
+        self._start_autoreceive_readings_thread()
+    
+    def _start_autoreceive_readings_thread(self):
+        """ Creates thread to listen to cpp stdout. """
+        # The path to the directory where you want to run the command
+        cpp_file_folder = '/home/eff/Desktop/Unibots_24_Effervescent/lidar_sdk/build'
+        # The command you want to run
+        cpp_file = './blocking_test' if self._blocking else './non-blocking_test'
+        self.process = subprocess.Popen(cpp_file, stdout=subprocess.PIPE, 
+                                stderr=subprocess.PIPE, bufsize=1, 
+                                universal_newlines=True, 
+                                cwd=cpp_file_folder, shell=True)
+        # Thread function for capturing output
+        def capture_output(pipe):
+            # Pattern for regex parsing
+            pattern = re.compile(r'\[(\d+): ([\d.]+), ([\d.]+)\]')
+            for line in iter(pipe.readline, ''):
+                match = pattern.search(line)
+                if match:
+                    index = int(match.group(1))
+                    r = float(match.group(2))  # Radius (distance)
+                    theta = float(match.group(3))  # Angle
+                    self._last_reading = (index, r, theta)
+                    if index == 0:
+                        # Update fresh data into last-cycle-reading
+                        self._last_cycle_readings = self._current_cycle_readings
+                        # Reset current cycle for each new cycle
+                        self._current_cycle_readings = []
 
+        # Data queue and thread setup
+        data_queue = []
+        stdout_thread = threading.Thread(target=capture_output, 
+                                         args=(self.process.stdout, data_queue))
+        stdout_thread.start()
 
     def get_one_reading(self) -> Tuple[int, float, float]:
         """ Returns a tuple of (measurement_index, distance, angle). """
         # TODO: 2024/03/19: tidy up this function
         cpp_file_folder = './lidar_sdk/build'
-        cpp_file = './blocking_test' if self._blocking else './non-blocking_test'
 
         # Function to capture output from stdout
         def capture_output(pipe, label):
@@ -29,17 +65,13 @@ class Lidar:
 
         # Create threads to handle stdout and stderr output
         stdout_thread = threading.Thread(target=capture_output, 
-                                         args=(process.stdout, 'STDOUT'))
-        stderr_thread = threading.Thread(target=capture_output, 
-                                         args=(process.stderr, 'STDERR'))
+                                         args=(process.stdout))
 
         # Start the threads
         stdout_thread.start()
-        stderr_thread.start()
 
         # Wait for the output capture threads to finish (if the process is continuous, this might never happen without an external stop condition)
         stdout_thread.join()
-        stderr_thread.join()
 
         # Optionally, add a mechanism to terminate the process safely
         # process.terminate()
@@ -70,8 +102,7 @@ class Lidar:
     def fit_square(self) -> List[Tuple[float, float]]:
         """ Reads from the lidar, and outputs the coordinates of the square arena's four corners
         in polar coordinates (r, theta). """
-        readings = [self.get_one_reading() for _ in range(450)]  # Simulate multiple Lidar readings
-        filtered_points = self.filter_robots(readings)  # Filter out robot readings
+        filtered_points = self.filter_robots(self._last_cycle_readings)  # Filter out robot readings
         square_corners_cartesian = self._fit_square_edges(filtered_points)  # Fit square edges
 
         # Convert corners back to polar coordinates
