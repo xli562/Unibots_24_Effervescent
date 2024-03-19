@@ -243,12 +243,12 @@ class Buzzer:
                 for char in pattern:
                     if char == '.':
                         bot.set_beep(beep_time)
-                        time.sleep((beep_time + interval)*0.01)
+                        time.sleep((beep_time + interval)*0.001)
                     elif char == '-':
                         bot.set_beep(beep_time * 2)
-                        time.sleep((beep_time * 2 + interval)*0.01)
+                        time.sleep((beep_time * 2 + interval)*0.001)
                     elif char == ' ':
-                        time.sleep((beep_time + interval)*0.01)
+                        time.sleep((beep_time + interval)*0.001)
 
 
 

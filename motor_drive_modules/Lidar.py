@@ -116,7 +116,7 @@ class Lidar:
     def fit_square(self) -> List[Tuple[float, float]]:
         """ Reads from the lidar, and outputs the coordinates of the square arena's four corners
         in polar coordinates (r, theta). """
-        filtered_points = self.filter_robots(self._last_cycle_readings)  # Filter out robot readings
+        filtered_points = self._filter_robots(self._last_cycle_readings)  # Filter out robot readings
         square_corners_cartesian = self._fit_square_edges(filtered_points)  # Fit square edges
 
         # Convert corners back to polar coordinates
@@ -124,72 +124,74 @@ class Lidar:
         return square_corners_polar
     
 
-    def _filter_robots_by_max_angle(self, readings:list, max_robot_angle=60) -> list:
+    def _filter_robots(self, readings:List[Tuple[int, float, float]], 
+                                    by_angle:bool=False,
+                                    max_robot_angle=60, 
+                                    min_group_size:int=5) -> List[Tuple[float, float]]:
         """ Filter out points that are likely to be robots based on angle coverage.
         Reads are grouped by continuity in angle; large gaps likely indicate non-robot objects (arena edges).
         
-        :param readings: List of tuples (measurement_index, distance, angle) from the Lidar.
-        :param max_robot_angle: Maximum angle in degrees a robot can cover at minimum distance.
-        :return: Filtered list of points in cartesian coordinates, likely part of the arena edges. """
-        
-        # Convert readings to polar coordinates and sort by angle
-        polar_points = sorted([(distance, angle) for _, distance, angle in readings], key=lambda x: x[1])
-        
-        # Group points by angle continuity, considering robot size
-        groups = []
-        current_group = [polar_points[0]]
-        
-        for i in range(1, len(polar_points)):
-            distance, angle = polar_points[i]
-            prev_distance, prev_angle = polar_points[i-1]
+        :param readings: List of tuples (measurement_index, distance, angle) from 
+                the Lidar.
+        :param by_angle: Filter robots by max angle instead of by min point cluster.
+        :param max_robot_angle: Maximum angle in degrees a robot can cover at 
+                minimum distance.
+        :return: Filtered list of points in cartesian coordinates, likely part 
+                of the arena edges. """
+        if by_angle: 
+            # Convert readings to polar coordinates and sort by angle
+            polar_points = sorted([(distance, angle) for _, distance, angle in readings], key=lambda x: x[1])
             
-            # If the gap to the previous angle is small, it's likely part of the same object
-            if angle - prev_angle < max_robot_angle:
-                current_group.append((distance, angle))
-            else:
-                # If the gap is large, start a new group
+            # Group points by angle continuity, considering robot size
+            groups = []
+            current_group = [polar_points[0]]
+            
+            for i in range(1, len(polar_points)):
+                distance, angle = polar_points[i]
+                prev_distance, prev_angle = polar_points[i-1]
+                
+                # If the gap to the previous angle is small, it's likely part of the same object
+                if angle - prev_angle < max_robot_angle:
+                    current_group.append((distance, angle))
+                else:
+                    # If the gap is large, start a new group
+                    groups.append(current_group)
+                    current_group = [(distance, angle)]
+            
+            # Add the last group if not empty
+            if current_group:
                 groups.append(current_group)
-                current_group = [(distance, angle)]
-        
-        # Add the last group if not empty
-        if current_group:
-            groups.append(current_group)
-        
-        # Filter out small groups, assuming they are robots
-        filtered_groups = [group for group in groups if len(group) > 1]
-        
-        # Flatten the list of groups and convert to cartesian coordinates
-        filtered_points = [polar_to_cartesian(distance, angle) for group in filtered_groups for distance, angle in group]
-        
-        return filtered_points
+            
+            # Filter out small groups, assuming they are robots
+            filtered_groups = [group for group in groups if len(group) > 1]
+            
+            # Flatten the list of groups and convert to cartesian coordinates
+            filtered_points = [polar_to_cartesian(distance, angle) for group in filtered_groups for distance, angle in group]
+        else:
+            # Convert all readings to cartesian coordinates
+            points = [self._polar_to_cartesian(distance, angle) for _, distance, angle in readings]
+            points.sort(key=lambda x: x[1])  # Sort points based on y-coordinate for grouping
+            
+            # Placeholder for filtered points
+            filtered_points = []
 
+            # Assuming robots are significantly smaller objects compared 
+            # to the arena, they would form smaller clusters of points.
+            # We identify larger clusters as parts of the arena.
+            i = 0
+            while i < len(points):
+                cluster = [points[i]]
+                j = i + 1
+                # Cluster threshold, can be adjusted
+                while j < len(points) and (points[j][1] - points[j - 1][1] < 0.1):  
+                    cluster.append(points[j])
+                    j += 1
 
-    def _filter_robots_by_min_point_cluster(self, readings: List[Tuple[int, float, float]], min_group_size: int = 5) -> List[Tuple[float, float]]:
-        # Convert all readings to cartesian coordinates
-        points = [self._polar_to_cartesian(distance, angle) for _, distance, angle in readings]
-        points.sort(key=lambda x: x[1])  # Sort points based on y-coordinate for grouping
-        
-        # Placeholder for filtered points
-        filtered_points = []
+                # If the cluster size is above a certain threshold, it's likely part of the arena
+                if len(cluster) >= min_group_size:
+                    filtered_points.extend(cluster)
 
-        # Assuming robots are significantly smaller objects compared 
-        # to the arena, they would form smaller clusters of points.
-        # We identify larger clusters as parts of the arena.
-        i = 0
-        while i < len(points):
-            cluster = [points[i]]
-            j = i + 1
-            # Cluster threshold, can be adjusted
-            while j < len(points) and (points[j][1] - points[j - 1][1] < 0.1):  
-                cluster.append(points[j])
-                j += 1
-
-            # If the cluster size is above a certain threshold, it's likely part of the arena
-            if len(cluster) >= min_group_size:
-                filtered_points.extend(cluster)
-
-            i = j
-
+                i = j
         return filtered_points
 
 
