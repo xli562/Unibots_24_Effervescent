@@ -1,6 +1,11 @@
 *** UniBots 2024 electronics & programming log ***
 
 Wed. 2024/03/20
+    Overall
+        - Put IMU control code (Chassis class) into Chassis.py
+        - Intake ON and OFF is integrated into Chassis class - when robot moves, intake is automatically ON
+        TODO:
+        - Return function. Returning to base and drop ball from current position. 
     Localisation
         - Finetuned PID controls for each motion
         - Implemented timer for motions
