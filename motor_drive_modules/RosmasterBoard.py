@@ -5,6 +5,7 @@ import struct
 import time
 import serial
 import threading
+import platform
 
 
 # V3.3.9
@@ -12,123 +13,126 @@ class Rosmaster(object):
     __uart_state = 0
 
     def __init__(self, car_type=1, com="/dev/ttyUSB0", delay=.002, debug=False):
-        # com = "COM30"
-        # com="/dev/ttyTHS1"
-        # com="/dev/ttyUSB0"
-        # com="/dev/ttyAMA0"
-
-        self.ser = serial.Serial(com, 115200)
-
-        self.__delay_time = delay
-        self.__debug = debug
-
-        self.__HEAD = 0xFF
-        self.__DEVICE_ID = 0xFC
-        self.__COMPLEMENT = 257 - self.__DEVICE_ID
-        self.__CAR_TYPE = car_type
-        self.__CAR_ADJUST = 0x80
-
-        self.FUNC_AUTO_REPORT = 0x01
-        self.FUNC_BEEP = 0x02
-        self.FUNC_PWM_SERVO = 0x03
-        self.FUNC_PWM_SERVO_ALL = 0x04
-        self.FUNC_RGB = 0x05
-        self.FUNC_RGB_EFFECT = 0x06
-
-        self.FUNC_REPORT_SPEED = 0x0A
-        self.FUNC_REPORT_MPU_RAW = 0x0B
-        self.FUNC_REPORT_IMU_ATT = 0x0C
-        self.FUNC_REPORT_ENCODER = 0x0D
-        self.FUNC_REPORT_ICM_RAW = 0x0E
-        
-        self.FUNC_RESET_STATE = 0x0F
-
-        self.FUNC_MOTOR = 0x10
-        self.FUNC_CAR_RUN = 0x11
-        self.FUNC_MOTION = 0x12
-        self.FUNC_SET_MOTOR_PID = 0x13
-        self.FUNC_SET_YAW_PID = 0x14
-        self.FUNC_SET_CAR_TYPE = 0x15
-
-        self.FUNC_UART_SERVO = 0x20
-        self.FUNC_UART_SERVO_ID = 0x21
-        self.FUNC_UART_SERVO_TORQUE = 0x22
-        self.FUNC_ARM_CTRL = 0x23
-        self.FUNC_ARM_OFFSET = 0x24
-
-        self.FUNC_AKM_DEF_ANGLE = 0x30
-        self.FUNC_AKM_STEER_ANGLE = 0x31
-
-
-        self.FUNC_REQUEST_DATA = 0x50
-        self.FUNC_VERSION = 0x51
-
-        self.FUNC_RESET_FLASH = 0xA0
-
-        self.CARTYPE_X3 = 0x01
-        self.CARTYPE_X3_PLUS = 0x02
-        self.CARTYPE_X1 = 0x04
-        self.CARTYPE_R2 = 0x05
-
-        self.__ax = 0.0
-        self.__ay = 0.0
-        self.__az = 0.0
-        self.__gx = 0.0
-        self.__gy = 0.0
-        self.__gz = 0.0
-        self.__mx = 0.0
-        self.__my = 0.0
-        self.__mz = 0.0
-        self.__vx = 0.0
-        self.__vy = 0.0
-        self.__vz = 0.0
-
-        self.__yaw = 0.0
-        self.__roll = 0.0
-        self.__pitch = 0.0
-
-        self.__encoder_m1 = 0
-        self.__encoder_m2 = 0
-        self.__encoder_m3 = 0
-        self.__encoder_m4 = 0
-
-        self.__read_id = 0
-        self.__read_val = 0
-
-        self.__read_arm_ok = 0
-        self.__read_arm = [-1, -1, -1, -1, -1, -1]
-
-        self.__version_H = 0
-        self.__version_L = 0
-        self.__version = 0
-
-        self.__pid_index = 0
-        self.__kp1 = 0
-        self.__ki1 = 0
-        self.__kd1 = 0
-
-        self.__arm_offset_state = 0
-        self.__arm_offset_id = 0
-        self.__arm_ctrl_enable = True
-
-        self.__battery_voltage = 0
-
-        self.__akm_def_angle = 100
-        self.__akm_readed_angle = False
-        self.__AKM_SERVO_ID = 0x01
-
-        self.__read_car_type = 0
-
-        if self.__debug:
-            print("cmd_delay=" + str(self.__delay_time) + "s")
-
-        if self.ser.isOpen():
-            print("Rosmaster Serial Opened! Baudrate=115200")
+        if  platform.system() != 'Linux':
+            print('System is not Linux, Rosmaster driver will not start!')
         else:
-            print("Serial Open Failed!")
-        # 打开机械臂的扭矩力，避免6号舵机首次插上去读不到角度。
-        self.set_uart_servo_torque(1)
-        time.sleep(.002)
+            # com = "COM30"
+            # com="/dev/ttyTHS1"
+            # com="/dev/ttyUSB0"
+            # com="/dev/ttyAMA0"
+
+            self.ser = serial.Serial(com, 115200)
+
+            self.__delay_time = delay
+            self.__debug = debug
+
+            self.__HEAD = 0xFF
+            self.__DEVICE_ID = 0xFC
+            self.__COMPLEMENT = 257 - self.__DEVICE_ID
+            self.__CAR_TYPE = car_type
+            self.__CAR_ADJUST = 0x80
+
+            self.FUNC_AUTO_REPORT = 0x01
+            self.FUNC_BEEP = 0x02
+            self.FUNC_PWM_SERVO = 0x03
+            self.FUNC_PWM_SERVO_ALL = 0x04
+            self.FUNC_RGB = 0x05
+            self.FUNC_RGB_EFFECT = 0x06
+
+            self.FUNC_REPORT_SPEED = 0x0A
+            self.FUNC_REPORT_MPU_RAW = 0x0B
+            self.FUNC_REPORT_IMU_ATT = 0x0C
+            self.FUNC_REPORT_ENCODER = 0x0D
+            self.FUNC_REPORT_ICM_RAW = 0x0E
+            
+            self.FUNC_RESET_STATE = 0x0F
+
+            self.FUNC_MOTOR = 0x10
+            self.FUNC_CAR_RUN = 0x11
+            self.FUNC_MOTION = 0x12
+            self.FUNC_SET_MOTOR_PID = 0x13
+            self.FUNC_SET_YAW_PID = 0x14
+            self.FUNC_SET_CAR_TYPE = 0x15
+
+            self.FUNC_UART_SERVO = 0x20
+            self.FUNC_UART_SERVO_ID = 0x21
+            self.FUNC_UART_SERVO_TORQUE = 0x22
+            self.FUNC_ARM_CTRL = 0x23
+            self.FUNC_ARM_OFFSET = 0x24
+
+            self.FUNC_AKM_DEF_ANGLE = 0x30
+            self.FUNC_AKM_STEER_ANGLE = 0x31
+
+
+            self.FUNC_REQUEST_DATA = 0x50
+            self.FUNC_VERSION = 0x51
+
+            self.FUNC_RESET_FLASH = 0xA0
+
+            self.CARTYPE_X3 = 0x01
+            self.CARTYPE_X3_PLUS = 0x02
+            self.CARTYPE_X1 = 0x04
+            self.CARTYPE_R2 = 0x05
+
+            self.__ax = 0.0
+            self.__ay = 0.0
+            self.__az = 0.0
+            self.__gx = 0.0
+            self.__gy = 0.0
+            self.__gz = 0.0
+            self.__mx = 0.0
+            self.__my = 0.0
+            self.__mz = 0.0
+            self.__vx = 0.0
+            self.__vy = 0.0
+            self.__vz = 0.0
+
+            self.__yaw = 0.0
+            self.__roll = 0.0
+            self.__pitch = 0.0
+
+            self.__encoder_m1 = 0
+            self.__encoder_m2 = 0
+            self.__encoder_m3 = 0
+            self.__encoder_m4 = 0
+
+            self.__read_id = 0
+            self.__read_val = 0
+
+            self.__read_arm_ok = 0
+            self.__read_arm = [-1, -1, -1, -1, -1, -1]
+
+            self.__version_H = 0
+            self.__version_L = 0
+            self.__version = 0
+
+            self.__pid_index = 0
+            self.__kp1 = 0
+            self.__ki1 = 0
+            self.__kd1 = 0
+
+            self.__arm_offset_state = 0
+            self.__arm_offset_id = 0
+            self.__arm_ctrl_enable = True
+
+            self.__battery_voltage = 0
+
+            self.__akm_def_angle = 100
+            self.__akm_readed_angle = False
+            self.__AKM_SERVO_ID = 0x01
+
+            self.__read_car_type = 0
+
+            if self.__debug:
+                print("cmd_delay=" + str(self.__delay_time) + "s")
+
+            if self.ser.isOpen():
+                print("Rosmaster Serial Opened! Baudrate=115200")
+            else:
+                print("Serial Open Failed!")
+            # 打开机械臂的扭矩力，避免6号舵机首次插上去读不到角度。
+            self.set_uart_servo_torque(1)
+            time.sleep(.002)
 
     def __del__(self):
         self.ser.close()

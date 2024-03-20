@@ -1,5 +1,5 @@
-from Chassis import Buzzer
 from Plotter import Plotter
+from Chassis import Buzzer
 
 import subprocess, threading, re
 import numpy as np
@@ -19,10 +19,12 @@ class Lidar:
         self._new_data_available = False
     
 
-        def __new__(cls, *args, **kwargs):
-            if not cls._instance:
-                cls._instance = super(Lidar, cls).__new__(cls, *args, **kwargs)
-            return cls._instance
+    def __new__(cls, *args, **kwargs):
+        """ To prevent the Lidar instance from being created
+        multiple times. """
+        if not cls._instance:
+            cls._instance = super(Lidar, cls).__new__(cls, *args, **kwargs)
+        return cls._instance
 
 
     def _check_connection(self, timeout=5):
