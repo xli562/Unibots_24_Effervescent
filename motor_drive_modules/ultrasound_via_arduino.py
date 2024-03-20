@@ -9,7 +9,7 @@ import struct
 NUM_OF_ULTRASOUND_SENSOR = 5
 
 class Ultrasound:
-    def __init__(self, com_port="/dev/ttyACM1", baud_rate=115200):
+    def __init__(self, com_port="/dev/ttyUSB0", baud_rate=115200):
         self.ser = serial.Serial(com_port, baud_rate)
         self.distances = [0] * NUM_OF_ULTRASOUND_SENSOR  # Left_Bottom, Right, Front, Back, Left_Top
         self.updated_sensors = [False]*NUM_OF_ULTRASOUND_SENSOR

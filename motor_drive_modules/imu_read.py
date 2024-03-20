@@ -32,7 +32,6 @@ class Chassis:
         self.time_global_start = time.time()
         self.imu_global_start = bot.get_imu_attitude_data()[2]
     
-
     def measure_stationary_yaw_drift_rate(self, duration, plot=False):
         yaws=[]
         times=[]
