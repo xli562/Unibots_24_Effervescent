@@ -40,9 +40,11 @@ void setup() {
   //----------Ultrasound----------
   Serial.begin(115200); // Initialize serial communication.
 
+  Serial.println("!Restart!");
+
   //----------Intake----------
   //   Serial.begin(9600);
-  pinMode(2, INPUT); // Using digital pin 2 for PWM input
+  pinMode(2, INPUT); // Using digital pin 2 for PWM input //NOTE: this pin is used by other one of the ultrasound
   pinMode(positivePin, OUTPUT);
   pinMode(negativePin, OUTPUT);
   attachInterrupt(digitalPinToInterrupt(2), measurePulse, CHANGE);
