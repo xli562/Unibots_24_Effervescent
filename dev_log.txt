@@ -1,5 +1,13 @@
 *** UniBots 2024 electronics & programming log ***
 
+Wed. 2024/03/20
+    Localisation
+        - finetuned PID controls for each motion
+        - implemented timer for motions
+        TODO:
+        - finetune turnings
+        - calculate position (?)
+
 Tue. 2024/03/19
     Lidar
         - Can now output _something_ as a prediction of the square of the arena
