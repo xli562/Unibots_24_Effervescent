@@ -1,4 +1,4 @@
-from imu_read import Chassis
+from Chassis import Chassis
 from ultrasound_via_arduino import Ultrasound
 import time
 import serial
@@ -25,7 +25,6 @@ def check_restart():
 
 
    
-
 while True:
     # 超声波采数据
     check_restart()
