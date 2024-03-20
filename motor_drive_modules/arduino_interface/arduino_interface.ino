@@ -78,8 +78,8 @@ void loop() {
     pulseLowTime = 0;
   }
   // Drive motors accordingly
-  Serial.print(dutyCycle);
-  Serial.print(" ");
+  // Serial.print(dutyCycle);
+  // Serial.print(" ");
   power = map(dutyCycle, minDutyCycle, maxDutyCycle, -255, 255);
   // Truncate power to [-1023, 1023]
   power = max(-255, min(power, 255));
@@ -119,22 +119,22 @@ void setPower(int pwr) {
     // Thus setting outputs to 0
     analogWrite(negativePin, 0);
     analogWrite(positivePin, 0);
-    Serial.print(0);
-    Serial.print(", ");
-    Serial.println(0);
+    // Serial.print(0);
+    // Serial.print(", ");
+    // Serial.println(0);
     return;
   }
   if (pwr >= 0) {
     analogWrite(negativePin, 0);
     analogWrite(positivePin, pwr);
-    Serial.print(pwr);
-    Serial.print(", ");
-    Serial.println(0);
+    // Serial.print(pwr);
+    // Serial.print(", ");
+    // Serial.println(0);
   } else {
     analogWrite(positivePin, 0);
     analogWrite(negativePin, -pwr);
-    Serial.print(0);
-    Serial.print(", ");
-    Serial.println(-pwr);
+    // Serial.print(0);
+    // Serial.print(", ");
+    // Serial.println(-pwr);
   }
 }

@@ -18,8 +18,8 @@ while True:
             print("Object at Front")
             chassis.reset()
             break
-        if ultrasound.rugby_left():
-            chassis.grab_rugby() #TODO: Define and write the function grab_rugby
+        # if ultrasound.rugby_left():
+        #     chassis.grab_rugby() #TODO: Define and write the function grab_rugby
     while True:
         chassis.right()
         if ultrasound.object_right():
