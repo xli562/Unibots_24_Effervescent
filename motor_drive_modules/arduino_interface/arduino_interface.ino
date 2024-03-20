@@ -5,8 +5,8 @@
 */
 
 //----------Intake----------
-#define positivePin 3
-#define negativePin 5
+#define positivePin 12
+#define negativePin 13
 
 volatile unsigned long pulseHighTime = 0;
 volatile unsigned long pulseLowTime = 0;
@@ -24,8 +24,8 @@ int power = 0;
 #define MAX_DISTANCE 400 // Maximum distance we want to ping for (in centimeters). Maximum sensor distance is rated at 400-500cm.
 #define NUM_ULTRASOUND 5
 
-int trigPins[NUM_ULTRASOUND] = {6,7,8,9,2};  //Left_Bottom, Right, Front, Back, Left_Top
-int echoPins[NUM_ULTRASOUND] = {11,12,13,10,4}; 
+int trigPins[NUM_ULTRASOUND] = {6,2,8,4,10};  //Left_Bottom, Right, Front, Back, Left_Top
+int echoPins[NUM_ULTRASOUND] = {7,3,9,5,11}; 
 
 NewPing ultrasound_sensors[NUM_ULTRASOUND]{
   NewPing(trigPins[0], echoPins[0], MAX_DISTANCE),
@@ -53,7 +53,7 @@ void loop() {
   //------------------------------Ultrasound-------------------------
   for (int i = 0; i < NUM_ULTRASOUND; i++) {
     // Read ultrasonic sensor distance
-    delay(50);                      // Wait 50ms between pings (about 20 pings/sec). 29ms should be the shortest delay between pings.
+    delay(35);                      // Wait 50ms between pings (about 20 pings/sec). 29ms should be the shortest delay between pings.
     unsigned int ultrasonic_distance = ultrasound_sensors[i].ping_cm(); // Send ping, get distance in centimeters and print result (0 = outside set distance range)
   
     // Send data over serial with identifiers
