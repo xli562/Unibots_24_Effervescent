@@ -2,11 +2,20 @@
 
 Wed. 2024/03/20
     Localisation
-        - finetuned PID controls for each motion
-        - implemented timer for motions
+        - Finetuned PID controls for each motion
+        - Implemented timer for motions
+        - Turning (a certain angle) was implemented: solves the problem of yaw angle jumping from 180 to -180 
+            - Tested 4 consecutive right turns. Work well. 
         TODO:
-        - finetune turnings
         - calculate position (?)
+    Arduino Interface:
+        - Re-wired ultrasound and motor extension to Arduino UNO. 
+        - Combined separate interfaces into a single interface .ino file
+    Obstacle:
+        - Started obstacle avoidance - aims to use readings from ultrasound to stop moving, etc. 
+        TODO: 
+        - Some code is written but no testing has been done. 
+        
 
 Tue. 2024/03/19
     Lidar

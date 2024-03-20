@@ -176,41 +176,34 @@ class Chassis:
                 self.action(pid_left, yaw_start)
             bot.set_car_motion(0, 0, 0)
     
-    def turn_left(self):
+    def turn(self, angle): # -ve for right, +ve for left
         yaw_start = self.get_yaw_calibrated()
-        pid_lturn = PID(0.065, 0.1, 0.1, setpoint=yaw_start-90)
-        while True:
+        pid_turn = PID(0.07, 0, 0.03, setpoint = yaw_start + angle)
+        self.vx = 0
+        self.vy = 0
+        yaw = yaw_start
+        previous_yaw = yaw_start
+        while abs(yaw_start + angle - yaw) > 1:
             try:
                 yaw = self.get_yaw_calibrated()
-                control = pid_lturn(yaw)
-                error = yaw - yaw_start
-                self.vx = 0
-                self.vy = 0
+                if (yaw-previous_yaw) > 300:
+                    yaw -= 360
+                elif (yaw-previous_yaw) < -300:
+                    yaw += 360
+                previous_yaw = yaw
+                error = yaw_start + angle - yaw 
+                control = pid_turn(yaw)
                 self.vz = max(-10, min(control, 10))
-                print("Error: {}, Vz: {}".format(error, self.vz))
+                print("Error: {}, Control: {}, Vz: {}".format(error, control, self.vz))
                 bot.set_car_motion(self.vx, self.vy, self.vz)
                 time.sleep(0.1)
             except KeyboardInterrupt:
                 bot.set_car_motion(0, 0, 0)
                 break
-    
-    def turn_right(self):
-        yaw_start = self.get_yaw_calibrated()
-        pid_rturn = PID(0.065, 0.1, 0.1, setpoint=yaw_start+90)
-        while True:
-            try:
-                yaw = self.get_yaw_calibrated()
-                control = pid_rturn(yaw)
-                error = yaw - yaw_start
-                self.vx = 0
-                self.vy = 0
-                self.vz = max(-10, min(control, 10))
-                print("Error: {}, Vz: {}".format(error, self.vz))
-                bot.set_car_motion(self.vx, self.vy, self.vz)
-                time.sleep(0.1)
-            except KeyboardInterrupt:
-                bot.set_car_motion(0, 0, 0)
-                break
+            
+        bot.set_car_motion(0, 0, 0)
+
+        
     
     def reset(self):
         bot.set_car_motion(0, 0 ,0)
@@ -226,6 +219,7 @@ bot.set_beep(100)
 print("Yaw Rate: {}".format(yaw_rate))
 print('IMU gloabl start: {}'.format(chassis.imu_global_start))
 
+'''
 chassis.forward(2)
 time.sleep(0.2)
 chassis.right(2)
@@ -234,11 +228,29 @@ chassis.backward(2)
 time.sleep(0.2)
 chassis.left(2)
 time.sleep(0.1)
-
+'''
 # while True:
-    # yaw = chassis.get_yaw_calibrated()
-    # print('yaw: {}'.format(yaw))
-    # error = chassis.imu_global_start - yaw
-    # print('Error: {}'.format(error))
+#     print(chassis.get_yaw_calibrated())
+#     time.sleep(0.1)
+chassis.turn(-90)
+time.sleep(0.2)
+chassis.forward(1)
+time.sleep(0.2)
+chassis.turn(-90)
+time.sleep(0.2)
+chassis.forward(1)
+time.sleep(0.2)
+chassis.turn(-90)
+time.sleep(0.2)
+chassis.forward(1)
+time.sleep(0.2)
+chassis.turn(-90)
+time.sleep(0.2)
+chassis.forward(1)
+time.sleep(0.2)
+chassis.turn(-90)
+time.sleep(0.2)
+chassis.forward(1)
+time.sleep(0.2)
 
-# chassis.straight_forward()
+
