@@ -25,13 +25,11 @@ class Chassis:
         self.vy = 0
         self.vz = 0
         self.yaw_tolerance = 1
-        #self.kP_staright = 1
-        #self.kP_right = 0.1 #0.5 too oscillatory
-        #self.kD = 0
         self.yaw_rate = 0
         self.time_global_start = time.time()
         self.imu_global_start = bot.get_imu_attitude_data()[2]
     
+
     def measure_stationary_yaw_drift_rate(self, duration, plot=False):
         yaws=[]
         times=[]
@@ -88,18 +86,107 @@ class Chassis:
         # print('Yaw After Calibration: {}'.format(yaw))
         return yaw
 
-    def straight_forward(self):
+    def action(self, controller, yaw_start):
+            yaw = self.get_yaw_calibrated()
+            control = controller(yaw)
+            error = yaw_start - yaw 
+            self.vz = max(-10, min(control, 10))
+            print("Error: {}, Control: {}, Vz: {}".format(error, control, self.vz))
+            bot.set_car_motion(self.vx, self.vy, self.vz)
+            time.sleep(0.1)
+
+    def forward(self, duration = None):
         yaw_start = self.get_yaw_calibrated()
-        pid_straight = PID(1,0,0, setpoint=yaw_start)
+        pid_forward = PID(0.5,0,0.1, setpoint=yaw_start)
+        self.vx = 1
+        self.vy = 0
+        if duration == None:
+            while True:
+                try:
+                    self.action(pid_forward, yaw_start)
+                except KeyboardInterrupt:
+                    bot.set_car_motion(0, 0, 0)
+                    break
+        else:
+            start = time.time()
+            end = time.time()
+            while end - start < duration:
+                end = time.time()
+                self.action(pid_forward, yaw_start)
+            bot.set_car_motion(0, 0, 0)
+            
+        
+    def backward(self, duration = None):
+        yaw_start = self.get_yaw_calibrated()
+        pid_backward = PID(0.5,0,0.1, setpoint=yaw_start)
+        self.vx = -1
+        self.vy = 0
+        if duration == None:
+            while True:
+                try:
+                    self.action(pid_backward, yaw_start)
+                except KeyboardInterrupt:
+                    bot.set_car_motion(0, 0, 0)
+                    break
+        else:
+            start = time.time()
+            end = time.time()
+            while end - start < duration:
+                end = time.time()
+                self.action(pid_backward, yaw_start)
+            bot.set_car_motion(0, 0, 0)
+    
+    def right(self, duration = None):
+        yaw_start = self.get_yaw_calibrated()
+        pid_right = PID(0.065, 0.1, 0.1, setpoint=yaw_start)
+        self.vx = 0
+        self.vy = 1
+        if duration == None:
+            while True:
+                try:
+                    self.action(pid_right, yaw_start)
+                except KeyboardInterrupt:
+                    bot.set_car_motion(0, 0, 0)
+                    break
+        else:
+            start = time.time()
+            end = time.time()
+            while end - start < duration:
+                end = time.time()
+                self.action(pid_right, yaw_start)
+            bot.set_car_motion(0, 0, 0)
+        
+    def left(self, duration = None):
+        yaw_start = self.get_yaw_calibrated()
+        pid_left = PID(0.065, 0.1, 0.1, setpoint=yaw_start)
+        self.vx = 0
+        self.vy = -1
+        if duration == None:
+            while True:
+                try:
+                    self.action(pid_left, yaw_start)
+                except KeyboardInterrupt:
+                    bot.set_car_motion(0, 0, 0)
+                    break
+        else:
+            start = time.time()
+            end = time.time()
+            while end - start < duration:
+                end = time.time()
+                self.action(pid_left, yaw_start)
+            bot.set_car_motion(0, 0, 0)
+    
+    def turn_left(self):
+        yaw_start = self.get_yaw_calibrated()
+        pid_lturn = PID(0.065, 0.1, 0.1, setpoint=yaw_start-90)
         while True:
             try:
                 yaw = self.get_yaw_calibrated()
-                control = pid_straight(yaw)
-                error = yaw_start - yaw 
-                self.vx = 1
+                control = pid_lturn(yaw)
+                error = yaw - yaw_start
+                self.vx = 0
                 self.vy = 0
                 self.vz = max(-10, min(control, 10))
-                #self.vz = max(-10, min(self.kP_staright * error, 10))
                 print("Error: {}, Vz: {}".format(error, self.vz))
                 bot.set_car_motion(self.vx, self.vy, self.vz)
                 time.sleep(0.1)
@@ -107,18 +194,17 @@ class Chassis:
                 bot.set_car_motion(0, 0, 0)
                 break
     
-    def right(self):
+    def turn_right(self):
         yaw_start = self.get_yaw_calibrated()
-        pid_right = PID(0.05, 0.1, 0, setpoint=yaw_start)
+        pid_rturn = PID(0.065, 0.1, 0.1, setpoint=yaw_start+90)
         while True:
             try:
                 yaw = self.get_yaw_calibrated()
-                control = pid_right(yaw)
+                control = pid_rturn(yaw)
                 error = yaw - yaw_start
                 self.vx = 0
-                self.vy = 1
+                self.vy = 0
                 self.vz = max(-10, min(control, 10))
-                #self.vz = max(-10, min(self.kP_right * error, 10))
                 print("Error: {}, Vz: {}".format(error, self.vz))
                 bot.set_car_motion(self.vx, self.vy, self.vz)
                 time.sleep(0.1)
@@ -127,12 +213,8 @@ class Chassis:
                 break
     
     def reset(self):
-        bot.set_car_motion(0, 0, 0)
-
-    def grab_rugby(self):
-        #TODO This functino is triggered when ultrasound detects a rugby
-        pass
-
+        bot.set_car_motion(0, 0 ,0)
+    
 
 print('Program Start with a sleep of 15 seconds')
 time.sleep(15)
@@ -144,8 +226,13 @@ bot.set_beep(100)
 print("Yaw Rate: {}".format(yaw_rate))
 print('IMU gloabl start: {}'.format(chassis.imu_global_start))
 
-#chassis.straight_forward()
-chassis.right()
+chassis.forward(2)
+time.sleep(0.2)
+chassis.right(2)
+time.sleep(0.2)
+chassis.backward(2)
+time.sleep(0.2)
+chassis.left(2)
 time.sleep(0.1)
 
 # while True:
