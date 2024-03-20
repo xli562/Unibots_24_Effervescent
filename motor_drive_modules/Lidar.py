@@ -137,7 +137,7 @@ class Lidar:
             filtered_groups = [group for group in groups if len(group) > 1]
             
             # Flatten the list of groups and convert to cartesian coordinates
-            filtered_points = [polar_to_cartesian(distance, angle) for group in filtered_groups for distance, angle in group]
+            filtered_points = [self._polar_to_cartesian(distance, angle) for group in filtered_groups for distance, angle in group]
         else:
             # Convert all readings to cartesian coordinates
             points = [self._polar_to_cartesian(distance, angle) for _, distance, angle in readings]
