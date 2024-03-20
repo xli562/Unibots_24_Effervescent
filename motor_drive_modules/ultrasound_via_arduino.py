@@ -14,6 +14,8 @@ class Ultrasound:
         self.distances = [0] * NUM_OF_ULTRASOUND_SENSOR  # Left_Bottom, Right, Front, Back, Left_Top
         self.updated_sensors = [False]*NUM_OF_ULTRASOUND_SENSOR
         self.updated = False # 用来判断是否所有UltrasoundSensor都更新了最新读数
+        self.obstacle_count = [0] * NUM_OF_ULTRASOUND_SENSOR #代表了连续几次iteration检测到了obstacle，为了避免随机触发
+        self.rugby_count = 0 #同理，代表连续几次检测到了rugby
         # 当不加入Threading，读取数据时会永远停留在receive_distances的while循环中。故需要加入Thread
         # 先测试阶段，先不放入Thread
         # 如果测试没问题，加入Thread不单单要uncomment下面两行，还需要添加别的代码（later）
@@ -42,8 +44,18 @@ class Ultrasound:
                     if(self.check_update_status()):
                         self.updated = True
 
+            # Update Rugby连续几次iteration被检测到了            
+            if (self.distances[4] - self.distances[0]) >= 5:
+                self.rugby_count += 1
+            else:
+                self.rugby_count = 0
+
     def update_distance(self, distance, sensor_index):
         self.distances[sensor_index] = distance
+        if (distance < 10 and distance > 0):
+            self.obstacle_count[sensor_index] += 1
+        else:
+            self.obstacle_count[sensor_index] = 0
 
     def get_distances(self):
         if (self.updated):
@@ -54,27 +66,32 @@ class Ultrasound:
     @property
     def rugby_left(self):
         if (self.updated):
-            return (self.distances[4] - self.distances[0]) >= 5
+            return (self.rugby_count >= 5)
+            # return (self.distances[4] - self.distances[0]) >= 5
             # rugby_left is True when the difference between top and bottom sensor > 5cm
 
     @property
     def object_left(self):
-        return (self.distances[4] < 10 and self.distances[4] > 0)
+        return (self.obstacle_count[4] >= 5)
+        # return (self.distances[4] < 10 and self.distances[4] > 0)
         # when object detected within 10cm, object detected
 
     @property
     def object_right(self):
-        return (self.distances[1] < 10 and self.distances[1] > 0)
+        return (self.obstacle_count[1] >= 5)
+        # return (self.distances[1] < 10 and self.distances[1] > 0)
         # when object detected within 10cm, object detected
     
     @property
     def object_front(self):
-        return (self.distances[2] < 10 and self.distances[2] > 0)
+        return (self.obstacle_count[2] >= 5)
+        # return (self.distances[2] < 10 and self.distances[2] > 0)
         # when object detected within 10cm, object detected
     
     @property
     def object_back(self):
-        return (self.distances[3] < 10 and self.distances[3] > 0)
+        return (self.obstacle_count[3] >= 5)
+        # return (self.distances[3] < 10 and self.distances[3] > 0)
         # when object detected within 10cm, object detected
 
     @property

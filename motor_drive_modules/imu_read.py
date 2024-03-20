@@ -126,6 +126,13 @@ class Chassis:
                 bot.set_car_motion(0, 0, 0)
                 break
     
+    def reset(self):
+        bot.set_car_motion(0, 0, 0)
+
+    def grab_rugby(self):
+        #TODO This functino is triggered when ultrasound detects a rugby
+        pass
+
 
 print('Program Start with a sleep of 15 seconds')
 time.sleep(15)
