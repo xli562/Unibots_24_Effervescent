@@ -98,7 +98,7 @@ class Plotter:
         plt.figure(figsize=(8, 8))
 
         # Create an animation that updates the plot
-        ani = FuncAnimation(plt.gcf(), update_plot, interval=1000, frames=20, blit=True)  # Update every 1000 ms
+        ani = FuncAnimation(plt.gcf(), update_plot, interval=1000, frames=20, blit=False)  # Update every 1000 ms
 
         # ani.save('myanimation.mp4', writer='ffmpeg')
         plt.show()
