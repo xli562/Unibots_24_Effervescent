@@ -83,7 +83,10 @@ class Lidar:
         and takes minimal processing effort 
 
         :return: an np.ndarray of the last cycle's readings"""
-        return self._last_cycle_readings
+        if self._last_cycle_readings.size > 0:
+            return self._last_cycle_readings
+        else:
+            return np.array([[0., 0., 0., 0.]])
     
 
     def get_last_reading(self) -> np.ndarray:
@@ -120,7 +123,7 @@ class Lidar:
             min_x = np.min(points[:, 0])
             max_x = np.max(points[:, 0])
             min_y = np.min(points[:, 1])
-            max_y = np.max(points[:, 0])
+            max_y = np.max(points[:, 1])
         else:
             min_x, min_y, max_x, max_y = (0., 0., 0., 0.)
         return np.array([min_x, max_x, min_y, max_y])
