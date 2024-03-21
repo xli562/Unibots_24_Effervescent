@@ -86,7 +86,7 @@ class Lidar:
         if self._last_cycle_readings.size > 0:
             return self._last_cycle_readings
         else:
-            return np.array([[0., 0., 0., 0.]])
+            return np.array([[0, 0., 0.]])
     
 
     def get_last_reading(self) -> np.ndarray:
@@ -94,7 +94,10 @@ class Lidar:
         and takes minimal processing effort 
 
         :return: an array of [index, r, theta] of the last point being read. """
-        return self._last_reading
+        if self._last_reading.size  > 0:
+            return self._last_reading
+        else:
+            return np.array([0, 0., 0.])
 
 
     def _polar_to_cartesian(self, r: float, theta: float) -> np.ndarray:
