@@ -64,7 +64,7 @@ class Ultrasound:
 
     def update_distance(self, distance, sensor_index):
         self.distances[sensor_index] = distance
-        if (distance < 65 and distance > 0):
+        if (distance < 30 and distance > 0):
             self.obstacle_count[sensor_index] += 1
         else:
             self.obstacle_count[sensor_index] = 0
@@ -84,13 +84,13 @@ class Ultrasound:
 
     @property
     def object_left(self):
-        return (self.obstacle_count[1] >= 5)
+        return (self.obstacle_count[1] >= 2)
         # return (self.distances[4] < 10 and self.distances[4] > 0)
         # when object detected within 10cm, object detected
 
     @property
     def object_right(self):
-        return (self.obstacle_count[4] >= 5)
+        return (self.obstacle_count[4] >= 2)
         # return (self.distances[1] < 10 and self.distances[1] > 0)
         # when object detected within 10cm, object detected
     

@@ -44,7 +44,7 @@ while True:
         print('In Index: {}'.format(index_in))
         index_in += 1
         event_handler.check_restart()
-        if event_handler.reset:
+        if event_handler.reset_flag:
             event_handler.empty_events()
             break
         time.sleep(0.1)

@@ -367,7 +367,7 @@ class Chassis:
         print('Chassis Foward Checkpoint 1')
         yaw_start = self.get_yaw_calibrated()
         pid_forward = PID(0.5,0,0.1, setpoint=yaw_start)
-        self.vx = 1
+        self.vx = 0.2
         self.vy = 0
         if duration == None:
             while not(self.ultrasound.object_front):
@@ -397,7 +397,7 @@ class Chassis:
     def backward(self, duration = None):
         yaw_start = self.get_yaw_calibrated()
         pid_backward = PID(0.5,0,0.1, setpoint=yaw_start)
-        self.vx = -1
+        self.vx = -0.2
         self.vy = 0
         if duration == None:
             while not(self.ultrasound.object_back):
@@ -424,9 +424,9 @@ class Chassis:
     
     def right(self, duration = None):
         yaw_start = self.get_yaw_calibrated()
-        pid_right = PID(0.065, 0.1, 0.1, setpoint=yaw_start)
+        pid_right = PID(0.2, -0.5, 0.01, setpoint=yaw_start)
         self.vx = 0
-        self.vy = 1
+        self.vy = 0.2
         if duration == None:
             while not(self.ultrasound.object_right):
                 try:
@@ -446,9 +446,9 @@ class Chassis:
         
     def left(self, duration = None):
         yaw_start = self.get_yaw_calibrated()
-        pid_left = PID(0.065, 0.1, 0.1, setpoint=yaw_start)
+        pid_left = PID(0.2, -0.5, 0.01, setpoint=yaw_start)
         self.vx = 0
-        self.vy = -1
+        self.vy = -0.2
         if duration == None:
             while not(self.ultrasound.object_left):
                 try:
