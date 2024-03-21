@@ -38,7 +38,7 @@ class Plotter:
         
         def update_plot(frame):
             plt.cla()  # Clear the current axes
-            square_vertices = fit_square()
+            _, square_vertices = fit_square()
             print(square_vertices)
             cycle_readings = get_last_cycle_readings()
             # Add the first point at the end to close the square

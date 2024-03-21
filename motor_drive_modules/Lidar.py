@@ -123,28 +123,93 @@ class Lidar:
             max_y = np.max(points[:, 0])
         else:
             min_x, min_y, max_x, max_y = (0,0,0,0)
-        return np.array([min_x, min_y, max_x, max_y])
+        return np.array([min_x, max_x, min_y, max_y])
 
 
-    def fit_square(self, reduce_data_size_step=2, angle_step=1) -> list:
-        """ Finds the rotated minimum-area rectangle of the point cloud.
+    def fit_square(self, reduce_data_size_step=2, 
+                   angle_step=1, sagging_index=0.2) -> list:
+        """ Finds the rotated minimum-area rectangle (MAR) of the point cloud.
          
         :param reduce_data_size_step: step for data size reduction
-        :param angle_step: step for angle search 
-        :return: list of 4 vertices of the min. area rect."""
+        :param angle_step: step for angle search, max is 10
+        :return: rotation_angle, bounding_vertices
+            rotation_angle: amount of anticlockwise rotation of the fit;
+            bounding_vertices: np.ndarray of 4 vertices of the min. area rect,
+            see below for order.
+            (max_x, max_y), (max_x, min_y), (min_x, min_y), (min_x, max_y) """
         
+        # Foolproof inputs
+        angle_step = max(0, min(angle_step, 10))
+
         # Preprocess the data
+        # TODO: filter out very-far points
         i = 0
-        working_data = []   # The data points to be considered
+        cleaned_data = np.array([])   # The data points to be considered
         for _, r, theta in self.get_last_cycle_readings():
             # Reduce data set size for faster computation
             if i % reduce_data_size_step == 0:
                 continue
-            working_data.append(self._polar_to_cartesian(r, theta))
+            cleaned_data.append(self._polar_to_cartesian(r, theta))
             i += 1
         
-        # TODO:
-        areas = []  # List to hold areas of the min. area rect.s
+        # Find the first MAR and its center's coord.s
+        bounding_sides = self._find_bounding_sides(cleaned_data)
+        center_offset = np.array([0.5*(bounding_sides[0]+bounding_sides[1]),
+                                  0.5*(bounding_sides[2]+bounding_sides[3])])
+        # Center the cleaned data on the origin
+        bounding_sides -= np.array([[center_offset[0]], center_offset[0],
+                                   center_offset[1], center_offset[1]])
+        cleaned_data -= center_offset
+
+        def calc_MAR_area(bounds:np.ndarray) -> float:
+            """ Calculates area of the MAR based on its bounds
+
+            :param bounds: bounds of the MAR, as below.
+            np.array([min_x, max_x, min_y, max_y]) """
+
+            return (bounds[1]-bounds[0])*(bounds[3]-bounds[2])
+
+        rotation_angles = np.array([0])
+        bounding_sides_array = np.array(bounding_sides)
+        areas = np.array([calc_MAR_area(bounding_sides)])  # List to hold areas of the min. area rect.s
+        rotation_matrix = np.array([[1,0],  # rotation matrix to be applied
+                                    [0,1]]) # to the points in the set
+        # Rotate the point set and find minimum area
+        i = 0
+        sagging_iter_bound = 20 // angle_step
+        sagging_coefficient = 1 + sagging_index * angle_step
+        for rotation_angle in range(angle_step, 91, angle_step):
+            np.append(rotation_angles, rotation_angle)
+            rotation_matrix = np.array([[np.cos(np.radians(rotation_angle)), -np.sin(np.radians(rotation_angle))],
+                                       [np.sin(np.radians(rotation_angle)), np.cos(np.radians(rotation_angle))]])
+            # Apply rotation to every point            
+            rotated_data = cleaned_data @ rotation_matrix.T
+            bounding_sides = self._find_bounding_sides(rotated_data)
+            bounding_sides_array = np.append(bounding_sides_array, bounding_sides)
+            areas = np.append(areas, calc_MAR_area(bounding_sides))
+            # Stop if the sagging point of the function is found
+            if i >= sagging_iter_bound:
+                if areas[i] > areas[i-sagging_iter_bound] * sagging_coefficient:
+                    rotation_angle -= sagging_iter_bound * angle_step
+                    bounding_sides = bounding_sides_array[i-sagging_iter_bound]
+                    bounding_vertices = np.array([bounding_sides[1], bounding_sides[3]],
+                                                 [bounding_sides[1], bounding_sides[2]],
+                                                 [bounding_sides[0], bounding_sides[2]],
+                                                 [bounding_sides[0], bounding_sides[3]])
+                    bounding_vertices = (bounding_vertices @ rotation_matrix.T) + center_offset
+                    return rotation_angle, bounding_vertices
+            i += 1
+        i = np.argmin(areas)
+        rotation_angle = angle_step * i
+        bounding_sides = bounding_sides_array[i]
+        bounding_vertices = np.array([bounding_sides[1], bounding_sides[3]],
+                                    [bounding_sides[1], bounding_sides[2]],
+                                    [bounding_sides[0], bounding_sides[2]],
+                                    [bounding_sides[0], bounding_sides[3]])
+        bounding_vertices = (bounding_vertices @ rotation_matrix.T) + center_offset
+        return rotation_angle, bounding_vertices
+
+
 
         
 # Example usage
