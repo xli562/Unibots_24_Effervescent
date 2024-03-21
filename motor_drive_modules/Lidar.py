@@ -7,6 +7,8 @@ from typing import List, Tuple
 
 
 class Lidar:
+    _instance = None    # Needed for the __new__() method
+
     def __init__(self):
         self._blocking = False
         self._last_reading = ()
@@ -73,6 +75,18 @@ class Lidar:
         stdout_thread.start()
 
 
+    def get_last_cycle_readings(self) -> list:
+        """ This function reads from a cached variable
+        and takes minimal processing effort """
+        return self._last_cycle_readings
+    
+
+    def get_last_reading(self) -> tuple:
+        """ This function reads from a cached variable
+        and takes minimal processing effort """
+        return self._last_reading
+
+
     def _polar_to_cartesian(self, r: float, theta: float) -> Tuple[float, float]:
         """ Convert polar coordinates to cartesian coordinates. """
         x = r * np.cos(np.radians(theta))
@@ -80,34 +94,21 @@ class Lidar:
         return (x, y)
 
 
-    def _fit_square_edges(self, points: List[Tuple[float, float]]) -> List[Tuple[float, float]]:
-        """  Fit a square to the given points.
-        Currently finds the bounding box """
-        if points:
-            min_x = min(points, key=lambda x: x[0])[0]
-            max_x = max(points, key=lambda x: x[0])[0]
-            min_y = min(points, key=lambda x: x[1])[1]
-            max_y = max(points, key=lambda x: x[1])[1]
-        else:
-            min_x, min_y, max_x, max_y = (0,0,0,0)
-
-        return [(min_x, min_y), (min_x, max_y), (max_x, max_y), (max_x, min_y)]
-
-
-    def _filter_robots(self, readings:List[Tuple[int, float, float]], 
-                                    by_angle:bool=False,
-                                    max_robot_angle=60, 
-                                    min_group_size:int=5) -> List[Tuple[float, float]]:
-        """ Filter out points that are likely to be robots based on angle coverage.
-        Reads are grouped by continuity in angle; large gaps likely indicate non-robot objects (arena edges).
+    def _filter_robots(self, readings:list, 
+                       by_angle:bool=False, by_cluster:bool=True,
+                       max_robot_angle=60, min_group_size:int=5) -> list:
+        """ Filters out points that are likely to be robots.
         
-        :param readings: List of tuples (measurement_index, distance, angle) from 
-                the Lidar.
-        :param by_angle: Filter robots by max angle instead of by min point cluster.
+        :param readings: List of tuples (measurement_index, distance, angle)
+            from the Lidar.
+        :param by_angle: Filter robots by max angle. Reads are grouped by 
+            continuity in angle; large gaps likely indicate 
+            non-robot objects (arena edges).
         :param max_robot_angle: Maximum angle in degrees a robot can cover at 
-                minimum distance.
-        :return: Filtered list of points in cartesian coordinates, likely part 
-                of the arena edges. """
+            minimum distance.
+        :param by_cluster: Filter robots by min point cluster. 
+        :return: Filtered list of points in Cartesians, likely part 
+            of the arena edges. """
         if by_angle: 
             # Convert readings to polar coordinates and sort by angle
             polar_points = sorted([(distance, angle) for _, distance, angle in readings], key=lambda x: x[1])
@@ -117,16 +118,16 @@ class Lidar:
             current_group = [polar_points[0]]
             
             for i in range(1, len(polar_points)):
-                distance, angle = polar_points[i]
-                prev_distance, prev_angle = polar_points[i-1]
+                r, theta = polar_points[i]
+                prev_r, prev_theta = polar_points[i-1]
                 
                 # If the gap to the previous angle is small, it's likely part of the same object
-                if angle - prev_angle < max_robot_angle:
-                    current_group.append((distance, angle))
+                if theta - prev_theta < max_robot_angle:
+                    current_group.append((r, theta))
                 else:
                     # If the gap is large, start a new group
                     groups.append(current_group)
-                    current_group = [(distance, angle)]
+                    current_group = [(r, theta)]
             
             # Add the last group if not empty
             if current_group:
@@ -165,7 +166,78 @@ class Lidar:
         return filtered_points
 
 
-    def fit_square(self) -> List[Tuple[float, float]]:
+    def _find_square_center(self, points:list) -> Tuple[float, float]:
+        """ Estimate the center of the square by averaging the given points. 
+        :param points: List[Tuple[float, float]] in Cartesians """
+        x_coords, y_coords = zip(*points)
+        center_x = sum(x_coords) / len(x_coords)
+        center_y = sum(y_coords) / len(y_coords)
+        return center_x, center_y
+
+
+    def _calculate_angle(self, center:Tuple[float, float], 
+                         point:Tuple[float, float]) -> float:
+        """ Calculate the angle of the square (in radians)
+        from the center to a point. """
+        dx, dy = point[0] - center[0], point[1] - center[1]
+        return np.arctan2(dy, dx)
+
+
+    def _cluster_readings(self, points:list) -> list:
+        """ Cluster the points based on which side of the square they are in. 
+        :param points: List[Tuple[float, float]] in Cartesians
+        :return: List[List[Tuple[float, float]] * 4] four clussters of points
+            in Cartesians """
+        
+        center = self._find_square_center(points)
+        angles = [self._calculate_angle(center, point) for point in points]
+        
+        # Divide the full circle into 4 sectors based on angles, allowing for some overlap
+        # influenced by the scatter_coefficient
+        clusters = [[] for _ in range(4)]
+        sector_size = np.pi / 2  # 90 degrees in radians
+        
+        for point, angle in zip(points, angles):
+            sector_index = int((angle % (2 * np.pi)) / sector_size)
+            clusters[sector_index].append(point)
+        
+        return clusters
+
+
+    def _find_bounding_box(self, points: List[Tuple[float, float]]) -> List[Tuple[float, float]]:
+        """  Fit a square to the given points.
+        Currently finds the bounding box """
+        if points:
+            min_x = min(points, key=lambda x: x[0])[0]
+            max_x = max(points, key=lambda x: x[0])[0]
+            min_y = min(points, key=lambda x: x[1])[1]
+            max_y = max(points, key=lambda x: x[1])[1]
+        else:
+            min_x, min_y, max_x, max_y = (0,0,0,0)
+
+        return [(min_x, min_y), (min_x, max_y), (max_x, max_y), (max_x, min_y)]
+
+    def fit_square(self, reduce_data_size_step=2, angle_step=1) -> list:
+        """ Finds the rotated minimum-area rectangle of the point cloud.
+         
+        :param reduce_data_size_step: step for data size reduction
+        :param angle_step: step for angle search 
+        :return: list of 4 vertices of the min. area rect."""
+        i = 0
+        working_data = []   # The data points to be considered
+        for _, r, theta in self.get_last_reading():
+            # Reduce data set size for faster computation
+            if i % reduce_data_size_step == 0:
+                continue
+            working_data.append(self._polar_to_cartesian(r, theta))
+            i += 1
+        
+        areas = []  # List to hold areas of the min. area rect.s
+
+        
+
+
+    def old_fit_square(self) -> List[Tuple[float, float]]:
         """ Reads from the lidar, and outputs the coordinates of the square arena's four corners
         in polar coordinates (r, theta). """
         # filtered_points = self._filter_robots(self._last_cycle_readings)  # Filter out robot readings
@@ -175,25 +247,13 @@ class Lidar:
             theta = reading[2]
             filtered_points.append(self._polar_to_cartesian(r, theta))
         # print(filtered_points)
-        square_corners_cartesian = self._fit_square_edges(filtered_points)  # Fit square edges
+        square_corners_cartesian = self._find_bounding_box(filtered_points)  # Fit square edges
 
         # Convert corners back to polar coordinates
         return square_corners_cartesian        
         square_corners_polar = [(np.sqrt(x**2 + y**2), np.degrees(np.arctan2(y, x))) for x, y in square_corners_cartesian]
         # return square_corners_polar
     
-
-    def get_last_cycle_readings(self) -> list:
-        """ This function reads from a cached variable
-        and takes minimal processing effort """
-        return self._last_cycle_readings
-    
-
-    def get_last_reading(self) -> tuple:
-        """ This function reads from a cached variable
-        and takes minimal processing effort """
-        return self._last_reading
-
 
 
 # Example usage

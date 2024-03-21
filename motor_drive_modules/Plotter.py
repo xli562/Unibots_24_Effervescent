@@ -9,7 +9,8 @@ class Plotter:
 
 
     def test_plot(self):
-        """ Plots a sine wave to test plotting functionalities. """ 
+        """ Test plotting functionalities. 
+        Plots a simple sine wave. """ 
 
         # Generate 100 x values from 0 to 2*pi
         x = np.linspace(0, 2 * np.pi, 100)
@@ -57,6 +58,38 @@ class Plotter:
                                 readings_r * np.sin(np.radians(readings_theta)), s=10, color='blue')  # Ensure the scatter plot is colored as expected
                 except ValueError as e:
                     print(f'cycle_readings = {cycle_readings}, \nError: {e}')
+
+            plt.xlim(axes_range[0], axes_range[1])
+            plt.ylim(axes_range[0], axes_range[1])
+
+        # Setup the figure and axis
+        plt.figure(figsize=(8, 8))
+
+        # Create an animation that updates the plot
+        ani = FuncAnimation(plt.gcf(), update_plot, interval=1000, frames=20, blit=True)  # Update every 1000 ms
+
+        # ani.save('myanimation.mp4', writer='ffmpeg')
+        plt.show()
+    
+
+    def plot_lidar_clustering(self, clusters:list, axes_range, 
+                              colors=('red','yellow','blue','green')):
+        """ Plots the edges' clustering result in 4 different colors. """
+        
+        def update_plot(frame):
+            plt.cla()  # Clear the current axes
+            i = 0
+            for cluster in clusters:
+                if cluster:
+                    # Handle error caused by abnormal cycle_readings data
+                    try:
+                        x, y = zip(*cluster)
+                        x = np.array(x)
+                        y = np.array(y)
+                        plt.scatter(x, y, s=10, color=colors[i])
+                    except ValueError as e:
+                        print(f'cluster = {cluster}, \nError: {e}')
+                i += 1
 
             plt.xlim(axes_range[0], axes_range[1])
             plt.ylim(axes_range[0], axes_range[1])
