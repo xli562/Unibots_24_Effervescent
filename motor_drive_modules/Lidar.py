@@ -151,7 +151,8 @@ class Lidar:
                 continue
             cleaned_data = np.vstack((cleaned_data, self._polar_to_cartesian(r, theta)))
             i += 1
-        
+        if cleaned_data.size == 0:
+            cleaned_data = np.array([0., 0., 0., 0.])
         # Find the first MAR and its center's coord.s
         bounding_sides = self._find_bounding_sides(cleaned_data)
         center_offset = np.array([0.5*(bounding_sides[0]+bounding_sides[1]),
