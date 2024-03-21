@@ -11,11 +11,11 @@ class Lidar:
 
     def __init__(self):
         self._blocking = False
-        self._last_reading = np.array([])
+        self._last_reading = np.array([0., 0., 0.])
         # A list of fixed length 450 to store data for the last complete cycle
-        self._last_cycle_readings = np.array([])
+        self._last_cycle_readings = np.array([[0., 0., 0.]])
         # A list of growing length to store data for the current cycle
-        self._current_cycle_readings = np.array([])
+        self._current_cycle_readings = np.array([[0., 0., 0.]])
         self._start_autoreceive_readings_thread()
         self._check_connection(timeout=5)
         self._new_data_available = False
@@ -36,7 +36,7 @@ class Lidar:
         Buzz the buzzer in a specific pattern. """
 
         def check_reading():
-            if not self._last_reading:
+            if self._last_reading.size == 0:
                 # buzzer = Buzzer()
                 # buzzer.beep_pattern('....  .   .  ', 5)
                 pass
@@ -70,7 +70,7 @@ class Lidar:
                         # Update fresh data into last-cycle-reading
                         self._last_cycle_readings = self._current_cycle_readings
                         # Reset current cycle for each new cycle
-                        self._current_cycle_readings = np.array([])
+                        self._current_cycle_readings = np.array([[0., 0., 0.]])
 
         # Data queue and thread setup
         stdout_thread = threading.Thread(target=capture_output, 
@@ -150,15 +150,16 @@ class Lidar:
         # Preprocess the data
         # TODO: filter out very-far points
         i = 0
-        cleaned_data = np.array([])   # The data points to be considered
+        cleaned_data = np.array([[0., 0.]])   # The data points to be considered
         for _, r, theta in self.get_last_cycle_readings():
             # Reduce data set size for faster computation
             if i % reduce_data_size_step == 0:
+                i += 1
                 continue
             cleaned_data = np.vstack((cleaned_data, self._polar_to_cartesian(r, theta)))
             i += 1
         if cleaned_data.size == 0:
-            cleaned_data = np.array([0., 0., 0., 0.])
+            cleaned_data = np.array([[0., 0.]])
         # Find the first MAR and its center's coord.s
         bounding_sides = self._find_bounding_sides(cleaned_data)
         center_offset = np.array([0.5*(bounding_sides[0]+bounding_sides[1]),
@@ -199,21 +200,25 @@ class Lidar:
                 if areas[i] > areas[i-sagging_iter_bound] * sagging_coefficient:
                     rotation_angle -= sagging_iter_bound * angle_step
                     bounding_sides = bounding_sides_array[i-sagging_iter_bound]
-                    bounding_vertices = np.array([bounding_sides[1], bounding_sides[3]],
+                    bounding_vertices = np.array([[bounding_sides[1], bounding_sides[3]],
                                                  [bounding_sides[1], bounding_sides[2]],
                                                  [bounding_sides[0], bounding_sides[2]],
-                                                 [bounding_sides[0], bounding_sides[3]])
-                    bounding_vertices = (bounding_vertices @ rotation_matrix.T) + center_offset
+                                                 [bounding_sides[0], bounding_sides[3]]])
+                    inv_rotation_matrix = np.array([[np.cos(np.radians(rotation_angle)), np.sin(np.radians(rotation_angle))],
+                                       [-np.sin(np.radians(rotation_angle)), np.cos(np.radians(rotation_angle))]])
+                    bounding_vertices = (bounding_vertices @ inv_rotation_matrix.T) + center_offset
                     return rotation_angle, bounding_vertices
             i += 1
         i = np.argmin(areas)
         rotation_angle = angle_step * i
         bounding_sides = bounding_sides_array[i]
-        bounding_vertices = np.array([bounding_sides[1], bounding_sides[3]],
+        bounding_vertices = np.array([[bounding_sides[1], bounding_sides[3]],
                                     [bounding_sides[1], bounding_sides[2]],
                                     [bounding_sides[0], bounding_sides[2]],
-                                    [bounding_sides[0], bounding_sides[3]])
-        bounding_vertices = (bounding_vertices @ rotation_matrix.T) + center_offset
+                                    [bounding_sides[0], bounding_sides[3]]])
+        inv_rotation_matrix = np.array([[np.cos(np.radians(rotation_angle)), np.sin(np.radians(rotation_angle))],
+                                       [-np.sin(np.radians(rotation_angle)), np.cos(np.radians(rotation_angle))]])
+        bounding_vertices = (bounding_vertices @ inv_rotation_matrix.T) + center_offset
         return rotation_angle, bounding_vertices
 
 

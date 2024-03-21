@@ -39,16 +39,16 @@ class Plotter:
         def update_plot(frame):
             plt.cla()  # Clear the current axes
             _, square_vertices = fit_square()
-            print(square_vertices)
+            print(f'square_vertices {square_vertices}')
             cycle_readings = get_last_cycle_readings()
             # Add the first point at the end to close the square
-            square_vertices.append(square_vertices[0])
+            square_vertices = np.vstack((square_vertices, square_vertices[0]))
             # This unpacks the vertices into x and y coordinates
             square_x, square_y = zip(*square_vertices)
             plt.plot(square_x, square_y, 'r-')  # Plot the square in red
 
             # Plot the points from the last cycle readings, with improved error handling
-            if cycle_readings:
+            if cycle_readings.size > 0:
                 # Handle error caused by abnormal cycle_readings data
                 try:
                     _, readings_r, readings_theta = zip(*cycle_readings)
@@ -66,7 +66,7 @@ class Plotter:
         plt.figure(figsize=(8, 8))
 
         # Create an animation that updates the plot
-        ani = FuncAnimation(plt.gcf(), update_plot, interval=1000, frames=20, blit=True)  # Update every 1000 ms
+        ani = FuncAnimation(plt.gcf(), update_plot, interval=1000, frames=20, blit=False)  # Update every 1000 ms
 
         # ani.save('myanimation.mp4', writer='ffmpeg')
         plt.show()
