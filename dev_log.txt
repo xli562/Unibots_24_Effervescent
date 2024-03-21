@@ -1,5 +1,11 @@
 *** UniBots 2024 electronics & programming log ***
+
+
+
 Thur. 2024/03/21
+    TODO: change arduino pin
+    Lidar
+        - Completed infrastructure and fitting.
     Obstacle
         - Ultrasound can be triggered to stop robot. 
         - HOWEVER: speed is too large. ultrasound collection/update rate cannot support effective obstacle avoidance. Therefore, need to lower speed and readjust PID control
