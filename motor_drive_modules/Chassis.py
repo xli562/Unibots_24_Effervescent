@@ -5,6 +5,9 @@ import math
 from decimal import Decimal, getcontext
 from simple_pid import PID
 from ultrasound_via_arduino import Ultrasound
+import sys
+import subprocess
+import serial
 
 
 getcontext().prec = 28
@@ -22,6 +25,23 @@ bot.clear_auto_report_data()
 
 def exponential_moving_average(new_value, previous_ema, alpha=0.1):
     return alpha * new_value + (1 - alpha) * previous_ema
+
+ser = serial.Serial("/dev/ttyACM0", 115200)
+# Rerun the current file
+def ROBOT_RESET():
+    print("Restarting...")
+    python = sys.executable
+    subprocess.call([python, "obstacle_avoidance.py"])
+    sys.exit()
+
+def check_restart():
+    data_str = ser.readline().strip().decode('utf-8')
+    readings = data_str.split('!')
+    for reading in readings:
+        if reading == "Restart":  # Command to restart - sent when restart button of Arduino is pressed
+            print('RESTARTING THE ROBOT')
+            ROBOT_RESET()
+
 
 class Motor:
     def __init__(self, port):
@@ -217,7 +237,7 @@ class Intake:
         """Sets the motor to free drive mode."""
         self._set(0)
 
-    def test_run():
+    def test_run(self):
         """ Tests basic intaking functions """
         intake = Intake()
         intake.eat()
@@ -323,14 +343,15 @@ class Chassis:
         return yaw
 
     def action(self, controller, yaw_start):
-            yaw = self.get_yaw_calibrated()
-            control = controller(yaw)
-            error = yaw_start - yaw 
-            self.vz = max(-10, min(control, 10))
-            print("Error: {}, Control: {}, Vz: {}".format(error, control, self.vz))
-            bot.set_car_motion(self.vx, self.vy, self.vz)
-            # self.intake.set_eat_power()
-            time.sleep(0.05)
+        check_restart()
+        yaw = self.get_yaw_calibrated()
+        control = controller(yaw)
+        error = yaw_start - yaw 
+        self.vz = max(-10, min(control, 10))
+        print("Error: {}, Control: {}, Vz: {}".format(error, control, self.vz))
+        bot.set_car_motion(self.vx, self.vy, self.vz)
+        # self.intake.set_eat_power()
+        time.sleep(0.05)
 
     def forward(self, duration = None):
         yaw_start = self.get_yaw_calibrated()

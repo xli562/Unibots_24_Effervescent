@@ -43,7 +43,7 @@ def check_restart():
 print('START')
 
 print('Program Start with a sleep of 15 seconds')
-time.sleep(15)
+time.sleep(25)
 bot.set_beep(100)
 chassis = Chassis()
 ultrasound = Ultrasound()
@@ -59,16 +59,16 @@ print('IMU gloabl start: {}'.format(chassis.imu_global_start))
     #check_restart()
 chassis.forward()
 print('Obstacle Forward')
-time.sleep(0.5)
+time.sleep(5)
 chassis.backward()
 print('Obstacle Backward')
 time.sleep(0.5)
-chassis.right()
-print('Obstacle Right')
-time.sleep(0.5)
-chassis.left()
-print('Obstacle Left')
-time.sleep(0.5)
+# chassis.right()
+# print('Obstacle Right')
+# time.sleep(0.5)
+# chassis.left()
+# print('Obstacle Left')
+# time.sleep(0.5)
 
 
     # print('After Forward')
@@ -84,6 +84,7 @@ time.sleep(0.5)
         # if ultrasound.rugby_left():
         #     chassis.grab_rugby() #TODO: Define and write the function grab_rugby
     # while True:
+    
     #     check_restart()
     #     chassis.right()
     #     if ultrasound.object_right:

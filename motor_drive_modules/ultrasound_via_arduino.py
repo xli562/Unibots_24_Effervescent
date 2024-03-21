@@ -2,10 +2,16 @@ import serial
 import threading
 import time
 import struct
+import subprocess
+import sys
 
 NUM_OF_ULTRASOUND_SENSOR = 5
 
-
+def ROBOT_RESET():
+    print("Restarting...")
+    python = sys.executable
+    subprocess.call([python, "obstacle_avoidance.py"])
+    sys.exit()
 
 class Ultrasound:
     def __init__(self, com_port="/dev/ttyACM0", baud_rate=115200):
@@ -45,6 +51,9 @@ class Ultrasound:
                         if(self.check_update_status()):
                             self.updated = True
 
+                    if 'Restart' in readings:
+                        ROBOT_RESET()
+
                 # Update Rugby连续几次iteration被检测到了            
                 if (self.distances[4] - self.distances[0]) >= 10:
                     self.rugby_count += 1
@@ -55,7 +64,7 @@ class Ultrasound:
 
     def update_distance(self, distance, sensor_index):
         self.distances[sensor_index] = distance
-        if (distance < 10 and distance > 0):
+        if (distance < 65 and distance > 0):
             self.obstacle_count[sensor_index] += 1
         else:
             self.obstacle_count[sensor_index] = 0
@@ -87,13 +96,13 @@ class Ultrasound:
     
     @property
     def object_front(self):
-        return (self.obstacle_count[2] >= 2)
+        return (self.obstacle_count[2] >= 1)
         # return (self.distances[2] < 10 and self.distances[2] > 0)
         # when object detected within 10cm, object detected
     
     @property
     def object_back(self):
-        return (self.obstacle_count[3] >= 2)
+        return (self.obstacle_count[3] >= 1)
         # return (self.distances[3] < 10 and self.distances[3] > 0)
         # when object detected within 10cm, object detected
 
