@@ -65,7 +65,7 @@ class Lidar:
                     r = float(match.group(2))  # Radius (distance)
                     theta = float(match.group(3))  # Angle
                     self._last_reading = np.array([index, r, theta])
-                    self._current_cycle_readings = np.append(self._current_cycle_readings, self._last_reading)
+                    self._current_cycle_readings = np.vstack((self._current_cycle_readings, self._last_reading))
                     if index == 0:
                         # Update fresh data into last-cycle-reading
                         self._last_cycle_readings = self._current_cycle_readings
@@ -179,14 +179,14 @@ class Lidar:
         sagging_iter_bound = 20 // angle_step
         sagging_coefficient = 1 + sagging_index * angle_step
         for rotation_angle in range(angle_step, 91, angle_step):
-            np.append(rotation_angles, rotation_angle)
+            np.vstack((rotation_angles, rotation_angle))
             rotation_matrix = np.array([[np.cos(np.radians(rotation_angle)), -np.sin(np.radians(rotation_angle))],
                                        [np.sin(np.radians(rotation_angle)), np.cos(np.radians(rotation_angle))]])
             # Apply rotation to every point            
             rotated_data = cleaned_data @ rotation_matrix.T
             bounding_sides = self._find_bounding_sides(rotated_data)
-            bounding_sides_array = np.append(bounding_sides_array, bounding_sides)
-            areas = np.append(areas, calc_MAR_area(bounding_sides))
+            bounding_sides_array = np.vstack((bounding_sides_array, bounding_sides))
+            areas = np.vstack((areas, calc_MAR_area(bounding_sides)))
             # Stop if the sagging point of the function is found
             if i >= sagging_iter_bound:
                 if areas[i] > areas[i-sagging_iter_bound] * sagging_coefficient:

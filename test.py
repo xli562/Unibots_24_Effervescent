@@ -4,12 +4,6 @@ import numpy as np
 M = np.array([[0, -1], 
               [1, 0]])
 
-# Example array of vectors
-V = np.array([[1, 0], 
-              [0, 1], 
-              [1, 1]])
+app = np.array([2,3])
 
-# Apply the matrix to every vector in V
-transformed_V = V @ M.T
-
-print(transformed_V)
+print(np.append(M, app))
