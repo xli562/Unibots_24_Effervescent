@@ -116,13 +116,13 @@ class Lidar:
         :returns: Min and max x and y values as below.
             np.array([min_x, min_y, max_x, max_y]) """
         
-        if points:
+        if points.size > 0:
             min_x = np.min(points[:, 0])
             max_x = np.max(points[:, 0])
             min_y = np.min(points[:, 1])
             max_y = np.max(points[:, 0])
         else:
-            min_x, min_y, max_x, max_y = (0,0,0,0)
+            min_x, min_y, max_x, max_y = (0., 0., 0., 0.)
         return np.array([min_x, max_x, min_y, max_y])
 
 
@@ -149,7 +149,7 @@ class Lidar:
             # Reduce data set size for faster computation
             if i % reduce_data_size_step == 0:
                 continue
-            cleaned_data.append(self._polar_to_cartesian(r, theta))
+            cleaned_data = np.vstack((cleaned_data, self._polar_to_cartesian(r, theta)))
             i += 1
         
         # Find the first MAR and its center's coord.s
@@ -157,7 +157,7 @@ class Lidar:
         center_offset = np.array([0.5*(bounding_sides[0]+bounding_sides[1]),
                                   0.5*(bounding_sides[2]+bounding_sides[3])])
         # Center the cleaned data on the origin
-        bounding_sides -= np.array([[center_offset[0]], center_offset[0],
+        bounding_sides -= np.array([center_offset[0], center_offset[0],
                                    center_offset[1], center_offset[1]])
         cleaned_data -= center_offset
 
