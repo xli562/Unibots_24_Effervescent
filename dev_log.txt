@@ -1,4 +1,9 @@
 *** UniBots 2024 electronics & programming log ***
+Thur. 2024/03/21
+    Obstacle
+        - Ultrasound can be triggered to stop robot. 
+        - HOWEVER: speed is too large. ultrasound collection/update rate cannot support effective obstacle avoidance. Therefore, need to lower speed and readjust PID control
+
 
 Wed. 2024/03/20
     Overall
