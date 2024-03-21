@@ -5,8 +5,11 @@
 #define MAX_DISTANCE 400 // Maximum distance we want to ping for (in centimeters). Maximum sensor distance is rated at 400-500cm.
 #define NUM_ULTRASOUND 5
 
-int trigPins[NUM_ULTRASOUND] = {6,7,8,9,4};  //Left_Bottom, Right, Front, Back, Left_Top
-int echoPins[NUM_ULTRASOUND] = {11,12,13,10,5}; 
+// int trigPins[NUM_ULTRASOUND] = {6,7,8,9,4};  //Left_Bottom, Right, Front, Back, Left_Top
+// int echoPins[NUM_ULTRASOUND] = {11,12,13,10,5}; 
+
+int trigPins[NUM_ULTRASOUND] = {4,2,8,6,10};  //Right_Bottom, Left, Front, Back, Right_Top
+int echoPins[NUM_ULTRASOUND] = {5,3,9,7,11};
 
 NewPing ultrasound_sensors[NUM_ULTRASOUND]{
   NewPing(trigPins[0], echoPins[0], MAX_DISTANCE),
