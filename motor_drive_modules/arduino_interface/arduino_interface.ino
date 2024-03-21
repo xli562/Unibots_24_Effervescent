@@ -26,7 +26,7 @@ int power = 0;
 
 // int trigPins[NUM_ULTRASOUND] = {6,2,8,4,10};  //Right_Bottom, Left, Front, Back, Right_Top
 // int echoPins[NUM_ULTRASOUND] = {7,3,9,5,11}; 
-int trigPins[NUM_ULTRASOUND] = {4,2,8,6,10};  //Right_Bottom, Left, Front, Back, Right_Top
+int trigPins[NUM_ULTRASOUND] = {4,A0,8,6,10};  //Right_Bottom, Left, Front, Back, Right_Top
 int echoPins[NUM_ULTRASOUND] = {5,3,9,7,11};
 
 NewPing ultrasound_sensors[NUM_ULTRASOUND]{
