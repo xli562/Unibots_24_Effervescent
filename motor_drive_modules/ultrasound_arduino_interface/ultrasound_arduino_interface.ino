@@ -22,7 +22,7 @@ NewPing ultrasound_sensors[NUM_ULTRASOUND]{
 
 void setup() {
   Serial.begin(115200); // Initialize serial communication.
-
+  Serial.println("!Restart!");
 //   for (int i = 0; i < NUM_ULTRASOUND; i++) {
 //     ultrasound_sensors[i] = NewPing(trigPins[i], echoPins[i], MAX_DISTANCE);
 //   } 

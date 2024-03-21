@@ -51,8 +51,8 @@ class Ultrasound:
                         if(self.check_update_status()):
                             self.updated = True
 
-                    if 'Restart' in readings:
-                        ROBOT_RESET()
+                    # if 'Restart' in readings:
+                    #     ROBOT_RESET()
 
                 # Update Rugby连续几次iteration被检测到了            
                 if (self.distances[4] - self.distances[0]) >= 10:

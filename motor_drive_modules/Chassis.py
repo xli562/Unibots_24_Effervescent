@@ -30,17 +30,24 @@ ser = serial.Serial("/dev/ttyACM0", 115200)
 # Rerun the current file
 def ROBOT_RESET():
     print("Restarting...")
-    python = sys.executable
-    subprocess.call([python, "obstacle_avoidance.py"])
+    python = '/home/eff/Desktop/Unibots_24_Effervescent/renv/bin/python3.10'
+    subprocess.call([python, "test.py"])
     sys.exit()
 
 def check_restart():
-    data_str = ser.readline().strip().decode('utf-8')
-    readings = data_str.split('!')
-    for reading in readings:
-        if reading == "Restart":  # Command to restart - sent when restart button of Arduino is pressed
-            print('RESTARTING THE ROBOT')
-            ROBOT_RESET()
+    print('restart_point_1')
+    try:
+        if ser.in_waiting > 0:
+            data_str = ser.readline().strip().decode('utf-8')
+            print('Received Data: {}'.format(data_str))
+            readings = data_str.split('!')
+            for reading in readings:
+                if reading == "Restart":  # Command to restart - sent when restart button of Arduino is pressed
+                    print('RESTARTING THE ROBOT')
+                    ROBOT_RESET()
+    except Exception as e:
+        print(e)
+
 
 
 class Motor:
@@ -354,6 +361,7 @@ class Chassis:
         time.sleep(0.05)
 
     def forward(self, duration = None):
+        print('Chassis Foward Checkpoint 1')
         yaw_start = self.get_yaw_calibrated()
         pid_forward = PID(0.5,0,0.1, setpoint=yaw_start)
         self.vx = 1
