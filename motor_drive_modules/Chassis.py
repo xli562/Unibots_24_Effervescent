@@ -8,6 +8,7 @@ from ultrasound_via_arduino import Ultrasound
 import sys
 import subprocess
 import serial
+from Event_Handler import Event_Handler
 
 
 getcontext().prec = 28
@@ -22,6 +23,7 @@ bot.create_receive_threading()
 bot.set_auto_report_state(enable = True)
 # Clear cache sent from the Rosmaster board
 bot.clear_auto_report_data()
+
 
 def exponential_moving_average(new_value, previous_ema, alpha=0.1):
     return alpha * new_value + (1 - alpha) * previous_ema
@@ -292,6 +294,7 @@ class Chassis:
         self.imu_global_start = bot.get_imu_attitude_data()[2]
         self.intake = Intake()
         self.ultrasound = Ultrasound()
+        self.event_handler = Event_Handler()
     
     def measure_stationary_yaw_drift_rate(self, duration, plot=False):
         yaws=[]
@@ -350,7 +353,7 @@ class Chassis:
         return yaw
 
     def action(self, controller, yaw_start):
-        check_restart()
+        self.event_handler.check_restart()
         yaw = self.get_yaw_calibrated()
         control = controller(yaw)
         error = yaw_start - yaw 
@@ -375,6 +378,7 @@ class Chassis:
                     print("Obstacles at directions: {}".format(self.ultrasound.check_obstacle))
 
                     self.action(pid_forward, yaw_start)
+
                 except KeyboardInterrupt:
                     self.reset()
                     break
