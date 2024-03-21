@@ -1,5 +1,5 @@
 from Plotter import Plotter
-from Chassis import Buzzer
+# from Chassis import Buzzer
 
 import subprocess, threading, re
 import numpy as np
@@ -33,8 +33,9 @@ class Lidar:
         Buzz the buzzer in a specific pattern. """
         def check_reading():
             if not self._last_reading:
-                buzzer = Buzzer()
-                buzzer.beep_pattern('....  .   .  ', 5)
+                # buzzer = Buzzer()
+                # buzzer.beep_pattern('....  .   .  ', 5)
+                pass
         threading.Timer(timeout, check_reading).start()
 
 
@@ -80,10 +81,8 @@ class Lidar:
 
 
     def _fit_square_edges(self, points: List[Tuple[float, float]]) -> List[Tuple[float, float]]:
-        """  Fit a square to the given points. This is a simplified version 
-        and might need adjustments based on actual Lidar data quality. """
-        
-        # Simplified approach: Find the bounding box and assume it's the square
+        """  Fit a square to the given points.
+        Currently finds the bounding box """
         if points:
             min_x = min(points, key=lambda x: x[0])[0]
             max_x = max(points, key=lambda x: x[0])[0]
@@ -169,12 +168,19 @@ class Lidar:
     def fit_square(self) -> List[Tuple[float, float]]:
         """ Reads from the lidar, and outputs the coordinates of the square arena's four corners
         in polar coordinates (r, theta). """
-        filtered_points = self._filter_robots(self._last_cycle_readings)  # Filter out robot readings
+        # filtered_points = self._filter_robots(self._last_cycle_readings)  # Filter out robot readings
+        filtered_points = []
+        for reading in self._last_cycle_readings:
+            r = reading[1]
+            theta = reading[2]
+            filtered_points.append(self._polar_to_cartesian(r, theta))
+        # print(filtered_points)
         square_corners_cartesian = self._fit_square_edges(filtered_points)  # Fit square edges
 
         # Convert corners back to polar coordinates
+        return square_corners_cartesian        
         square_corners_polar = [(np.sqrt(x**2 + y**2), np.degrees(np.arctan2(y, x))) for x, y in square_corners_cartesian]
-        return square_corners_polar
+        # return square_corners_polar
     
 
     def get_last_cycle_readings(self) -> list:
@@ -195,7 +201,7 @@ if __name__ == "__main__":
     lidar = Lidar()
     print(lidar._last_reading)
     plotter = Plotter()
-    plotter.plot_lidar_fit_square(lidar.fit_square, lidar.get_last_cycle_readings)
-    while 1:
-        square_corners = lidar.fit_square()
-        print(square_corners)
+    plotter.plot_lidar_fit_square(lidar.fit_square, lidar.get_last_cycle_readings, (-0.5, 0.5))
+    # while 1:
+        # square_corners = lidar.fit_square()
+        # print(lidar._last_cycle_readings)
