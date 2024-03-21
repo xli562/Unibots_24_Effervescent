@@ -4,6 +4,7 @@ from RosmasterBoard import Rosmaster
 import math
 from decimal import Decimal, getcontext
 from simple_pid import PID
+from ultrasound_via_arduino import Ultrasound
 
 
 getcontext().prec = 28
@@ -263,6 +264,7 @@ class Chassis:
         self.time_global_start = time.time()
         self.imu_global_start = bot.get_imu_attitude_data()[2]
         self.intake = Intake()
+        self.ultrasound = Ultrasound()
     
     def measure_stationary_yaw_drift_rate(self, duration, plot=False):
         yaws=[]
@@ -327,8 +329,8 @@ class Chassis:
             self.vz = max(-10, min(control, 10))
             print("Error: {}, Control: {}, Vz: {}".format(error, control, self.vz))
             bot.set_car_motion(self.vx, self.vy, self.vz)
-            self.intake.set_eat_power()
-            time.sleep(0.1)
+            # self.intake.set_eat_power()
+            time.sleep(0.05)
 
     def forward(self, duration = None):
         yaw_start = self.get_yaw_calibrated()
@@ -336,8 +338,13 @@ class Chassis:
         self.vx = 1
         self.vy = 0
         if duration == None:
-            while True:
+            while not(self.ultrasound.object_front):
                 try:
+                    self.ultrasound.receive_distances()
+                    distances = self.ultrasound.get_distances()  
+                    print("Distances:", distances)
+                    print("Obstacles at directions: {}".format(self.ultrasound.check_obstacle))
+
                     self.action(pid_forward, yaw_start)
                 except KeyboardInterrupt:
                     self.reset()
@@ -345,10 +352,14 @@ class Chassis:
         else:
             start = time.time()
             end = time.time()
-            while end - start < duration:
+            while (end - start < duration) and not(self.ultrasound.object_front):
                 end = time.time()
+                self.ultrasound.receive_distances()
+                distances = self.ultrasound.get_distances()  
+                print("Distances:", distances)
+                print("Obstacles at directions: {}".format(self.ultrasound.check_obstacle))
                 self.action(pid_forward, yaw_start)
-            self.reset()
+        self.reset()
                
     def backward(self, duration = None):
         yaw_start = self.get_yaw_calibrated()
@@ -356,8 +367,12 @@ class Chassis:
         self.vx = -1
         self.vy = 0
         if duration == None:
-            while True:
+            while not(self.ultrasound.object_back):
                 try:
+                    self.ultrasound.receive_distances()
+                    distances = self.ultrasound.get_distances()  
+                    print("Distances:", distances)
+                    print("Obstacles at directions: {}".format(self.ultrasound.check_obstacle))
                     self.action(pid_backward, yaw_start)
                 except KeyboardInterrupt:
                     self.reset()
@@ -365,10 +380,14 @@ class Chassis:
         else:
             start = time.time()
             end = time.time()
-            while end - start < duration:
+            while (end - start < duration) and not(self.ultrasound.object_back):
                 end = time.time()
+                self.ultrasound.receive_distances()
+                distances = self.ultrasound.get_distances()  
+                print("Distances:", distances)
+                print("Obstacles at directions: {}".format(self.ultrasound.check_obstacle))
                 self.action(pid_backward, yaw_start)
-            self.reset()
+        self.reset()
     
     def right(self, duration = None):
         yaw_start = self.get_yaw_calibrated()
@@ -376,8 +395,9 @@ class Chassis:
         self.vx = 0
         self.vy = 1
         if duration == None:
-            while True:
+            while not(self.ultrasound.object_right):
                 try:
+                    self.ultrasound.receive_distances()
                     self.action(pid_right, yaw_start)
                 except KeyboardInterrupt:
                     self.reset()
@@ -385,10 +405,11 @@ class Chassis:
         else:
             start = time.time()
             end = time.time()
-            while end - start < duration:
+            while (end - start < duration) and not(self.ultrasound.object_right):
+                self.ultrasound.receive_distances()
                 end = time.time()
                 self.action(pid_right, yaw_start)
-            self.reset()
+        self.reset()
         
     def left(self, duration = None):
         yaw_start = self.get_yaw_calibrated()
@@ -396,8 +417,9 @@ class Chassis:
         self.vx = 0
         self.vy = -1
         if duration == None:
-            while True:
+            while not(self.ultrasound.object_left):
                 try:
+                    self.ultrasound.receive_distances()
                     self.action(pid_left, yaw_start)
                 except KeyboardInterrupt:
                     self.reset()
@@ -405,10 +427,11 @@ class Chassis:
         else:
             start = time.time()
             end = time.time()
-            while end - start < duration:
+            while (end - start < duration) and not(self.ultrasound.object_left):
+                self.ultrasound.receive_distances()
                 end = time.time()
                 self.action(pid_left, yaw_start)
-            self.reset()
+        self.reset()
     
     def turn(self, angle): # -ve for right, +ve for left
         yaw_start = self.get_yaw_calibrated()
@@ -440,7 +463,7 @@ class Chassis:
     
     def reset(self):
         bot.set_car_motion(0, 0 ,0)
-        self.intake.set_unload_power()
+        # self.intake.set_unload_power()
     
 
 
