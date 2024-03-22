@@ -53,15 +53,15 @@ Wed. 2024/03/20
         - 取消自动熄屏：左上角 -> Settings -> Power -> Blank screen -> set to ‘never’
         - Bash sudo apt-get update
         - Bash sudo apt-get upgrade -y
-        - Select ‘upgrade’ for all prompts
+            - Select ‘upgrade’ for all prompts
         - Bash sudo apt full-upgrade -y
         - **DO NOT run sudo apt autoremove !!!!**
         - Bash sudo apt-get install python3-pyqt5 tk-dev qt5-default pyqt5-dev pyqt5-dev-tools
         - Download, make and install python as shown in the Thur. 2024/03/14 log:
-        - Difference in the commands ran:
-        - Bash ./configure --enable-optimizations
-        - Bash make <This takes around 25 mins>
-        - Bash sudo make altinstall
+            - Difference in the commands ran:
+                - Bash ./configure --enable-optimizations
+                - Bash make <This takes around 25 mins>
+                - Bash sudo make altinstall
         - Install code-oss as shown in the same dev log.
         - Bash sudo pip3.10 install tk
         - Create and cd to a testing folder
