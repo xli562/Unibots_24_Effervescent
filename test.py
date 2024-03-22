@@ -1,5 +1,10 @@
 import numpy as np
+import time
 
-a = np.array([-5.0,-2,0,1])
+period = 0.1
+start_time = time.time()
+while time.time() < start_time + period:
+    time.sleep(period / 10)
+end_time = time.time()
 
-print(np.max(np.abs(a)))
+print(end_time - start_time)

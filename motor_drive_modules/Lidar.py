@@ -5,7 +5,7 @@ try:
 except:
     pass
 
-import subprocess, threading, re
+import subprocess, threading, re, time
 import numpy as np
 from typing import List, Tuple
 
@@ -20,9 +20,15 @@ class Lidar:
         self._last_cycle_readings = np.array([[0., 0., 0.]])
         # A list of growing length to store data for the current cycle
         self._current_cycle_readings = np.array([[0., 0., 0.]])
+        self._last_fitted_angle_error = 0
+        self._last_fitted_arena_vertices = np.array([[0., 0.], [0., 0.], [0., 0.], [0., 0.]])
         self._start_autoreceive_readings_thread()
         self._check_connection(timeout=5)
         self._new_data_available = False
+        # Threads management
+        self._threads = []
+        self._terminate_all_threads = threading.Event()
+        self._terminate_all_threads.clear()
     
 
     def __new__(cls, *args, **kwargs):
@@ -34,6 +40,17 @@ class Lidar:
         return cls._instance
 
 
+    def __del__(self):
+        self._terminate_all_threads.set()
+        for thread in self._threads:
+            thread.join()
+        try:
+            buzzer = Buzzer()
+            buzzer.beep_pattern('....  .. -')
+        except:
+            pass
+
+
     def _check_connection(self, timeout=5):
         """ Checks the Lidar connection.
         If the last reading is still empty after 5 seconds, 
@@ -42,13 +59,16 @@ class Lidar:
         :param timeout: the wait time before checking if lidar returns readings"""
 
         def check_reading():
-            if self._last_reading.size == 0:
-                try:
-                    buzzer = Buzzer()
-                    buzzer.beep_pattern('....  .   .  ', 5)
-                except:
-                    pass
-        threading.Timer(timeout, check_reading).start()
+            while not self._terminate_all_threads.is_set():
+                if self._last_reading.size == 0:
+                    try:
+                        buzzer = Buzzer()
+                        buzzer.beep_pattern('....  .   .  ', 5)
+                    except:
+                        pass
+        thread = threading.Timer(timeout, check_reading)
+        self._threads.append(thread)
+        thread.start()
 
 
     def _start_autoreceive_readings_thread(self):
@@ -64,26 +84,45 @@ class Lidar:
                                 cwd=cpp_file_folder, shell=True)
         # Thread function for capturing output
         def capture_output(pipe):
-            # Pattern for regex parsing
-            pattern = re.compile(r'\[(\d+): ([\d.]+), ([\d.]+)\]')
-            for line in iter(pipe.readline, ''):
-                match = pattern.search(line)
-                if match:
-                    index = int(match.group(1))
-                    r = float(match.group(2))  # Radius (distance)
-                    theta = float(match.group(3))  # Angle
-                    self._last_reading = np.array([index, r, theta])
-                    self._current_cycle_readings = np.vstack((self._current_cycle_readings, self._last_reading))
-                    if index == 0:
-                        # Update fresh data into last-cycle-reading
-                        self._last_cycle_readings = self._current_cycle_readings
-                        # Reset current cycle for each new cycle
-                        self._current_cycle_readings = np.array([[0., 0., 0.]])
+            while not self._terminate_all_threads.is_set():
+                # Pattern for regex parsing
+                pattern = re.compile(r'\[(\d+): ([\d.]+), ([\d.]+)\]')
+                for line in iter(pipe.readline, ''):
+                    match = pattern.search(line)
+                    if match:
+                        index = int(match.group(1))
+                        r = float(match.group(2))  # Radius (distance)
+                        theta = float(match.group(3))  # Angle
+                        self._last_reading = np.array([index, r, theta])
+                        self._current_cycle_readings = np.vstack((self._current_cycle_readings, self._last_reading))
+                        if index == 0:
+                            # Update fresh data into last-cycle-reading
+                            self._last_cycle_readings = self._current_cycle_readings
+                            # Reset current cycle for each new cycle
+                            self._current_cycle_readings = np.array([[0., 0., 0.]])
 
         # Data queue and thread setup
         stdout_thread = threading.Thread(target=capture_output, 
                                          args=(self.process.stdout,))
+        self._threads.append(stdout_thread)
         stdout_thread.start()
+
+
+    def _start_periodic_fitting_thread(self, period=0.1):
+        """ Creates thread to periodically fit the square 
+        and store results in instance variables. """
+
+        def get_fit(period):
+            while not self._terminate_all_threads.is_set():
+                fraction_of_period = period * 0.1
+                start_time = time.time()
+                self._last_fitted_angle_error, self._last_fitted_arena_vertices = self.fit_square(reduce_data_size_step=3)
+                while time.time() < start_time + period:
+                    time.sleep(fraction_of_period)
+        thread = threading.Thread(target=get_fit, 
+                                         args=(period,))
+        self._threads.append(thread)
+        thread.start()
 
 
     def get_last_cycle_readings(self) -> np.ndarray:
@@ -91,7 +130,7 @@ class Lidar:
         and takes minimal processing effort 
 
         :return: an np.ndarray of the last cycle's readings.
-        returns a 2D np.array([[0, 0., 0.]]) if no data is returned from the lidar. """
+            returns a 2D np.array([[0, 0., 0.]]) if no data is returned from the lidar. """
 
         if self._last_cycle_readings.size > 0:
             return self._last_cycle_readings
@@ -104,11 +143,29 @@ class Lidar:
         and takes minimal processing effort 
 
         :return: an array of [index, r, theta] of the last point being read. 
-        returns a 1D np.array([0, 0., 0.]) if no data is returned from the lidar. """
+            returns a 1D np.array([0, 0., 0.]) if no data is returned from the lidar. """
         if self._last_reading.size  > 0:
             return self._last_reading
         else:
             return np.array([0, 0., 0.])
+
+
+    def get_last_angle_error(self):
+        """ Getter for last measured angle error, for use in navigation
+        
+        :return: The last measured angle error,
+            read from a cached variable updated at ~10Hz. """
+        
+        return self._last_fitted_angle_error
+    
+
+    def get_last_arena_vertices(self):
+        """ Getter for last measured arena vertices
+        
+        :return: The last fitted arena vertices, 
+            read from a cached variable updated at ~10Hz. """
+        
+        return self._last_fitted_arena_vertices
 
 
     def _polar_to_cartesian(self, r: float, theta: float) -> np.ndarray:
@@ -140,7 +197,7 @@ class Lidar:
 
 
     def fit_square(self, reduce_data_size_step=2, 
-                   angle_step=1, sagging_index=0.2) -> list:
+                   angle_step=1) -> list:
         """ Finds the rotated minimum-area rectangle (MAR) of the point cloud.
          
         :param reduce_data_size_step: step for data size reduction
@@ -192,8 +249,6 @@ class Lidar:
                                     [0,1]]) # to the points in the set
         # Rotate the point set and find minimum area
         i = 0
-        sagging_iter_bound = 20 // angle_step
-        sagging_coefficient = 1 + sagging_index * angle_step
 
         def find_rot_ang_bounding_vertices(min_area_index:int):
             """ Calculates error in angle and bounding vertices from 
@@ -234,11 +289,6 @@ class Lidar:
             bounding_sides = self._find_bounding_sides(rotated_data)
             bounding_sides_array = np.vstack((bounding_sides_array, bounding_sides))
             areas = np.vstack((areas, calc_MAR_area(bounding_sides)))
-            # Stop if the sagging point of the function is found
-            if i >= sagging_iter_bound:
-                if areas[i] > areas[i-sagging_iter_bound] * sagging_coefficient:
-                    min_area_index = i-sagging_iter_bound + np.argmin(areas[i-sagging_iter_bound:i])
-                    return find_rot_ang_bounding_vertices(min_area_index)
             i += 1
         # calculate the argmin if it is not already found in the above loop
         i = np.argmin(areas)
@@ -270,7 +320,7 @@ class Lidar:
                     readings_x = readings_r * np.cos(np.radians(readings_theta))
                     readings_y = readings_r * np.sin(np.radians(readings_theta))
                     # Auto determine the axes range
-                    if not axes_range is None:
+                    if axes_range is None:
                         max_x_y = np.max(np.max(np.abs(readings_x)), np.max(np.abs(readings_y)))
                         axes_range = [-max_x_y*1.5, max_x_y*1.5]
                     plt.scatter(readings_x, readings_y, s=10, color='blue')
