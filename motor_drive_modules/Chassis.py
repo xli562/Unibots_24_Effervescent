@@ -900,7 +900,7 @@ class Chassis:
             for i in range((num-2)%4):
                 self.turn(-90)
                 time.sleep(0.5)
-        shift = lidar.get_last_angle_error()
+        shift = self.lidar.get_last_angle_error()
         self.turn(-shift)
 
 
