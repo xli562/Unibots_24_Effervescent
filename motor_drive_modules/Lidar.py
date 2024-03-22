@@ -249,8 +249,7 @@ class Lidar:
         """ Plots the point cloud and the fitted square from the lidar
         :param fit_square: a function
         :param get_last_cycle_readings: a function """
-        
-        def update_plot(frame):
+        def update_plot(frame, axes_range):
             plt.cla()  # Clear the current axes
             _, square_vertices = self.fit_square()
             print(f'square_vertices {square_vertices}')
@@ -285,7 +284,7 @@ class Lidar:
         plt.figure(figsize=(8, 8))
 
         # Create an animation that updates the plot
-        ani = FuncAnimation(plt.gcf(), update_plot, interval=1000, frames=20, blit=False)  # Update every 1000 ms
+        ani = FuncAnimation(plt.gcf(), update_plot, interval=1000, frames=20, blit=False, fargs=(axes_range,))  # Update every 1000 ms
 
         # ani.save('myanimation.mp4', writer='ffmpeg')
         plt.show()
@@ -297,7 +296,7 @@ class Lidar:
 if __name__ == "__main__":
     lidar = Lidar()
     print(lidar._last_reading)
-    lidar.plot_lidar_fit_square()
+    lidar.plot_fit_square()
     # while 1:
         # square_corners = lidar.fit_square()
         # print(lidar._last_cycle_readings)
