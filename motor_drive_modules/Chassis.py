@@ -424,7 +424,7 @@ class Chassis:
     
     def right(self, duration = None):
         yaw_start = self.get_yaw_calibrated()
-        pid_right = PID(0.2, -0.5, 0.01, setpoint=yaw_start)
+        pid_right = PID(0.1, 0, 0.05, setpoint=yaw_start)
         self.vx = 0
         self.vy = 0.2
         if duration == None:
