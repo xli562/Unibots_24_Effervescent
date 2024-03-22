@@ -27,25 +27,25 @@ def exponential_moving_average(new_value, previous_ema, alpha=0.1):
 
 # ser = serial.Serial("/dev/ttyACM0", 115200)
 # Rerun the current file
-def ROBOT_RESET():
-    print("Restarting...")
-    python = '/home/eff/Desktop/Unibots_24_Effervescent/renv/bin/python3.10'
-    subprocess.call([python, "test.py"])
-    sys.exit()
+# def ROBOT_RESET():
+#     print("Restarting...")
+#     python = '/home/eff/Desktop/Unibots_24_Effervescent/renv/bin/python3.10'
+#     subprocess.call([python, "test.py"])
+#     sys.exit()
 
-def check_restart():
-    print('restart_point_1')
-    try:
-        if ser.in_waiting > 0:
-            data_str = ser.readline().strip().decode('utf-8')
-            print('Received Data: {}'.format(data_str))
-            readings = data_str.split('!')
-            for reading in readings:
-                if reading == "Restart":  # Command to restart - sent when restart button of Arduino is pressed
-                    print('RESTARTING THE ROBOT')
-                    ROBOT_RESET()
-    except Exception as e:
-        print(e)
+# def check_restart():
+#     print('restart_point_1')
+#     try:
+#         if ser.in_waiting > 0:
+#             data_str = ser.readline().strip().decode('utf-8')
+#             print('Received Data: {}'.format(data_str))
+#             readings = data_str.split('!')
+#             for reading in readings:
+#                 if reading == "Restart":  # Command to restart - sent when restart button of Arduino is pressed
+#                     print('RESTARTING THE ROBOT')
+#                     ROBOT_RESET()
+#     except Exception as e:
+#         print(e)
 
 
 class Servo:
@@ -718,14 +718,14 @@ class Chassis:
         return yaw
 
     def action(self, controller, yaw_start):
-        # self.event_handler.check_restart()
+        self.event_handler.check_restart() ###
         yaw = self.get_yaw_calibrated()
         control = controller(yaw)
         error = yaw_start - yaw 
         self.vz = max(-10, min(control, 10))
         print("Error: {}, Control: {}, Vz: {}".format(error, control, self.vz))
         bot.set_car_motion(self.vx, self.vy, self.vz)
-        # self.intake.eat()
+        self.intake.eat()
         time.sleep(0.05)
 
     def forward(self, duration = None):
