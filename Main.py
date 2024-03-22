@@ -52,7 +52,7 @@ while True:
         pass
 
     # return loop
-    while (abs(get_target[0]) > 10) and (abs(get_target[1]) > 15):
+    while (abs(get_target[0]) > 45) and (abs(get_target[1]) > 45):
         chassis.forward()
         chassis.right()
         if get_target[2] > 10:

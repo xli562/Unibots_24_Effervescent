@@ -9,6 +9,7 @@ import sys
 import subprocess
 import serial
 from Event_Handler import Event_Handler
+import Lidar
 
 
 getcontext().prec = 28
@@ -475,7 +476,7 @@ class Chassis:
         previous_yaw = yaw_start
         while abs(yaw_start + angle - yaw) > 1:
             try:
-                yaw = self.get_yaw_calibrated()
+                yaw = self.gets_yaw_calibrated()
                 if (yaw-previous_yaw) > 300:
                     yaw -= 360
                 elif (yaw-previous_yaw) < -300:
