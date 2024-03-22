@@ -725,7 +725,7 @@ class Chassis:
         self.vz = max(-10, min(control, 10))
         print("Error: {}, Control: {}, Vz: {}".format(error, control, self.vz))
         bot.set_car_motion(self.vx, self.vy, self.vz)
-        self.intake.set_eat_power()
+        # self.intake.eat()
         time.sleep(0.05)
 
     def forward(self, duration = None):
