@@ -1,5 +1,9 @@
-from Plotter import Plotter
-# from Chassis import Buzzer
+import matplotlib.pyplot as plt
+from matplotlib.animation import FuncAnimation
+try:
+    from Chassis import Buzzer
+except:
+    pass
 
 import subprocess, threading, re
 import numpy as np
@@ -33,13 +37,17 @@ class Lidar:
     def _check_connection(self, timeout=5):
         """ Checks the Lidar connection.
         If the last reading is still empty after 5 seconds, 
-        Buzz the buzzer in a specific pattern. """
+        buzz the buzzer in a specific pattern if buzzer is connected. 
+        
+        :param timeout: the wait time before checking if lidar returns readings"""
 
         def check_reading():
             if self._last_reading.size == 0:
-                # buzzer = Buzzer()
-                # buzzer.beep_pattern('....  .   .  ', 5)
-                pass
+                try:
+                    buzzer = Buzzer()
+                    buzzer.beep_pattern('....  .   .  ', 5)
+                except:
+                    pass
         threading.Timer(timeout, check_reading).start()
 
 
@@ -82,7 +90,9 @@ class Lidar:
         """ This function reads from a cached variable
         and takes minimal processing effort 
 
-        :return: an np.ndarray of the last cycle's readings"""
+        :return: an np.ndarray of the last cycle's readings.
+        returns a 2D np.array([[0, 0., 0.]]) if no data is returned from the lidar. """
+
         if self._last_cycle_readings.size > 0:
             return self._last_cycle_readings
         else:
@@ -93,7 +103,8 @@ class Lidar:
         """ This function reads from a cached variable
         and takes minimal processing effort 
 
-        :return: an array of [index, r, theta] of the last point being read. """
+        :return: an array of [index, r, theta] of the last point being read. 
+        returns a 1D np.array([0, 0., 0.]) if no data is returned from the lidar. """
         if self._last_reading.size  > 0:
             return self._last_reading
         else:
@@ -101,24 +112,20 @@ class Lidar:
 
 
     def _polar_to_cartesian(self, r: float, theta: float) -> np.ndarray:
-        """ Convert polar coordinates to cartesian coordinates. """
+        """ Convert polar coordinates to cartesian coordinates. 
+        :param r: polar radius
+        :param theta: polar angle *in degrees* """
+
         x = r * np.cos(np.radians(theta))
         y = r * np.sin(np.radians(theta))
         return np.array([x, y])
 
 
-    def _nomalise_points(self, points:np.ndarray, center:np.ndarray) -> np.ndarray:
-        """ Normalises the point cloud to center at the given point.
-
-        :param points: List[Tuple[float, float]] in Cartesians.
-        :param centre: The centre's coord.s in Cartesians. """
-
-        return points - center
-
-
     def _find_bounding_sides(self, points:np.ndarray) -> np.ndarray:
         """ Find the bounding box to the given points. 
 
+        :param points: 2D np.array([[x1, y1], [x2, y2], ..., [xn, yn]]) of
+            cartesian point coord.s
         :returns: Min and max x and y values as below.
             np.array([min_x, min_y, max_x, max_y]) """
         
@@ -139,7 +146,8 @@ class Lidar:
         :param reduce_data_size_step: step for data size reduction
         :param angle_step: step for angle search, max is 10
         :return: rotation_angle, bounding_vertices
-            rotation_angle: amount of anticlockwise rotation of the fit;
+            angle_error: error in heading w.r.t. the arena wall 
+                directly faced by the robot. 
             bounding_vertices: np.ndarray of 4 vertices of the min. area rect,
             see below for order.
             (max_x, max_y), (max_x, min_y), (min_x, min_y), (min_x, max_y) """
@@ -186,6 +194,37 @@ class Lidar:
         i = 0
         sagging_iter_bound = 20 // angle_step
         sagging_coefficient = 1 + sagging_index * angle_step
+
+        def find_rot_ang_bounding_vertices(min_area_index:int):
+            """ Calculates error in angle and bounding vertices from 
+            argmin of the areas array
+             
+            :param min_area_index: The index at which the 
+                areas array takes its minimum 
+            :returns: angle_error, bounding_vertices
+                angle_error: error in heading w.r.t. the arena wall 
+                    directly faced by the robot. 
+                bounding_vertices: np.ndarray of 4 vertices of 
+                    the min. area rect, see below for order.
+                    (max_x, max_y), (max_x, min_y), (min_x, min_y), (min_x, max_y) """
+            
+            rotation_angle = angle_step * min_area_index
+            bounding_sides = bounding_sides_array[min_area_index]
+            bounding_vertices = np.array([[bounding_sides[1], bounding_sides[3]],
+                                        [bounding_sides[1], bounding_sides[2]],
+                                        [bounding_sides[0], bounding_sides[2]],
+                                        [bounding_sides[0], bounding_sides[3]]])
+            inv_rotation_matrix = np.array([[np.cos(np.radians(rotation_angle)), np.sin(np.radians(rotation_angle))],
+                                [-np.sin(np.radians(rotation_angle)), np.cos(np.radians(rotation_angle))]])
+            bounding_vertices = (bounding_vertices @ inv_rotation_matrix.T) + center_offset
+            # Map rotation angle to angle error for navigation
+            angle_error = 0
+            if rotation_angle < 45:
+                angle_error = -rotation_angle
+            elif rotation_angle < 90:
+                angle_error = 90 - rotation_angle
+            return angle_error, bounding_vertices
+        
         for rotation_angle in range(angle_step, 91, angle_step):
             np.vstack((rotation_angles, rotation_angle))
             rotation_matrix = np.array([[np.cos(np.radians(rotation_angle)), -np.sin(np.radians(rotation_angle))],
@@ -198,28 +237,58 @@ class Lidar:
             # Stop if the sagging point of the function is found
             if i >= sagging_iter_bound:
                 if areas[i] > areas[i-sagging_iter_bound] * sagging_coefficient:
-                    rotation_angle -= sagging_iter_bound * angle_step
-                    bounding_sides = bounding_sides_array[i-sagging_iter_bound]
-                    bounding_vertices = np.array([[bounding_sides[1], bounding_sides[3]],
-                                                 [bounding_sides[1], bounding_sides[2]],
-                                                 [bounding_sides[0], bounding_sides[2]],
-                                                 [bounding_sides[0], bounding_sides[3]]])
-                    inv_rotation_matrix = np.array([[np.cos(np.radians(rotation_angle)), np.sin(np.radians(rotation_angle))],
-                                       [-np.sin(np.radians(rotation_angle)), np.cos(np.radians(rotation_angle))]])
-                    bounding_vertices = (bounding_vertices @ inv_rotation_matrix.T) + center_offset
-                    return rotation_angle, bounding_vertices
+                    min_area_index = i-sagging_iter_bound + np.argmin(areas[i-sagging_iter_bound:i])
+                    return find_rot_ang_bounding_vertices(min_area_index)
             i += 1
+        # calculate the argmin if it is not already found in the above loop
         i = np.argmin(areas)
-        rotation_angle = angle_step * i
-        bounding_sides = bounding_sides_array[i]
-        bounding_vertices = np.array([[bounding_sides[1], bounding_sides[3]],
-                                    [bounding_sides[1], bounding_sides[2]],
-                                    [bounding_sides[0], bounding_sides[2]],
-                                    [bounding_sides[0], bounding_sides[3]]])
-        inv_rotation_matrix = np.array([[np.cos(np.radians(rotation_angle)), np.sin(np.radians(rotation_angle))],
-                                       [-np.sin(np.radians(rotation_angle)), np.cos(np.radians(rotation_angle))]])
-        bounding_vertices = (bounding_vertices @ inv_rotation_matrix.T) + center_offset
-        return rotation_angle, bounding_vertices
+        return find_rot_ang_bounding_vertices(i)
+
+
+    def plot_fit_square(self, axes_range=None):
+        """ Plots the point cloud and the fitted square from the lidar
+        :param fit_square: a function
+        :param get_last_cycle_readings: a function """
+        
+        def update_plot(frame):
+            plt.cla()  # Clear the current axes
+            _, square_vertices = self.fit_square()
+            print(f'square_vertices {square_vertices}')
+            cycle_readings = self.get_last_cycle_readings()
+            # Add the first point at the end to close the square
+            square_vertices = np.vstack((square_vertices, square_vertices[0]))
+            # This unpacks the vertices into x and y coordinates
+            square_x, square_y = zip(*square_vertices)
+            plt.plot(square_x, square_y, 'r-')  # Plot the square in red
+
+            # Plot the points from the last cycle readings, with improved error handling
+            if cycle_readings.size > 0:
+                # Handle error caused by abnormal cycle_readings data
+                try:
+                    _, readings_r, readings_theta = zip(*cycle_readings)
+                    readings_r = np.array(readings_r)
+                    readings_theta = np.array(readings_theta)
+                    readings_x = readings_r * np.cos(np.radians(readings_theta))
+                    readings_y = readings_r * np.sin(np.radians(readings_theta))
+                    # Auto determine the axes range
+                    if not axes_range is None:
+                        max_x_y = np.max(np.max(np.abs(readings_x)), np.max(np.abs(readings_y)))
+                        axes_range = [-max_x_y*1.5, max_x_y*1.5]
+                    plt.scatter(readings_x, readings_y, s=10, color='blue')
+                except ValueError as e:
+                    print(f'cycle_readings = {cycle_readings}, \nError: {e}')
+
+            plt.xlim(axes_range[0], axes_range[1])
+            plt.ylim(axes_range[0], axes_range[1])
+
+        # Setup the figure and axis
+        plt.figure(figsize=(8, 8))
+
+        # Create an animation that updates the plot
+        ani = FuncAnimation(plt.gcf(), update_plot, interval=1000, frames=20, blit=False)  # Update every 1000 ms
+
+        # ani.save('myanimation.mp4', writer='ffmpeg')
+        plt.show()
 
 
 
@@ -228,8 +297,7 @@ class Lidar:
 if __name__ == "__main__":
     lidar = Lidar()
     print(lidar._last_reading)
-    plotter = Plotter()
-    plotter.plot_lidar_fit_square(lidar.fit_square, lidar.get_last_cycle_readings, (-0.5, 0.5))
+    lidar.plot_lidar_fit_square()
     # while 1:
         # square_corners = lidar.fit_square()
         # print(lidar._last_cycle_readings)

@@ -1,9 +1,6 @@
 import numpy as np
 
-# Example matrix: a 90-degree rotation matrix
-M = np.array([[0, -1], 
-              [1, 0]])
+a = np.array([4,3,2,1,5,6,7,8])
 
-app = np.array([2,3])
-
-print(np.append(M, app))
+i = np.argmin(a[6:])
+print(i+6)
