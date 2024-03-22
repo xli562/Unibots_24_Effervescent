@@ -643,7 +643,7 @@ class Ultrasound:
 
 
 class Chassis:
-    def __init__(self, ultrasound:Ultrasound, lidar:Lidar, intake:Intake, event_handler:Event_Handler) -> None:
+    def __init__(self, ultrasound:Ultrasound, lidar:Lidar, intake:Intake, event_handler:Event_Handler, buzzer:Buzzer) -> None:
         self.vx = 0
         self.vy = 0
         self.vz = 0
@@ -656,6 +656,7 @@ class Chassis:
         self.ultrasound = ultrasound
         self.lidar = lidar
         self.event_handler = event_handler
+        self.buzzer = buzzer
     
     def measure_stationary_yaw_drift_rate(self, duration, plot=False):
         yaws=[]
@@ -677,6 +678,8 @@ class Chassis:
             plt.savefig('plt_no_offset.png')
         
         yaw_rate = (yaw_end - yaw)/(end-start)
+        if yaw_rate == 0:
+            self.buzzer.beep_pattern('...')
 
         self.yaw_rate = yaw_rate
 
