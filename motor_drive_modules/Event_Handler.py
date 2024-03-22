@@ -43,7 +43,7 @@ class Event_Handler():
         self.reset_flag = False
 
 
-event_handler = Event_Handler()
+# event_handler = Event_Handler()
 
 # while True:
 #     index_out += 1
