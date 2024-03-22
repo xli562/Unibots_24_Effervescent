@@ -500,7 +500,7 @@ class Lidar:
                     readings_y = readings_r * np.sin(np.radians(readings_theta))
                     # Auto determine the axes range
                     if axes_range is None:
-                        max_x_y = np.max(np.max(np.abs(readings_x)), np.max(np.abs(readings_y)))
+                        max_x_y = max(np.max(np.abs(readings_x)), np.max(np.abs(readings_y)))
                         axes_range = [-max_x_y*1.5, max_x_y*1.5]
                     plt.scatter(readings_x, readings_y, s=10, color='blue')
                 except ValueError as e:
@@ -656,7 +656,17 @@ class Chassis:
         self.lidar = lidar
         self.event_handler = event_handler
         self.buzzer = buzzer
-    
+    def get_stopping_condition(self,direction):
+        if direction == 'f':
+            return self.ultrasound.object_front
+        elif direction == 'b':
+            return self.ultrasound.object_back
+        elif direction == 'r':
+            return self.ultrasound.object_right
+        elif direction == 'l':
+            return self.ultrasound.object_left
+        else:
+            return self.ultrasound.object_front
     def measure_stationary_yaw_drift_rate(self, duration, plot=False):
         yaws=[]
         times=[]

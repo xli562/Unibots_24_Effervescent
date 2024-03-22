@@ -36,7 +36,7 @@ bot.set_beep(100)
 print("Yaw Rate: {}".format(yaw_rate))
 print('IMU gloabl start: {}'.format(chassis.imu_global_start))
 
-def move(direction, condition, duration = None):
+def move(direction, duration = None):
     yaw_start = chassis.get_yaw_calibrated()
     if direction == 'f':
         # yaw_start = chassis.get_yaw_calibrated()
@@ -61,7 +61,7 @@ def move(direction, condition, duration = None):
 
 
     if duration is None:
-        while not(condition):
+        while not(chassis.get_stopping_condition()):
             chassis.ultrasound.receive_distances()
             distances = chassis.ultrasound.get_distances()  
             print("Distances:", distances)
@@ -70,7 +70,7 @@ def move(direction, condition, duration = None):
     else:
         start = time.time()
         end = time.time()
-        while (end - start < duration) and not(condition):
+        while (end - start < duration) and not(chassis.get_stopping_condition()):
             end = time.time()
             chassis.ultrasound.receive_distances()
             distances = chassis.ultrasound.get_distances()  
@@ -124,19 +124,19 @@ while True:
 
     # Moving right a little bit to start with
     if not(chassis.event_handler.timeout_flag):
-        move('r',chassis.ultrasound.object_right, duration = 2) # 2 seconds move right
+        move('r', duration = 5) # 2 seconds move right
 
     # Going out, Searching & Grabbing
     while chassis.event_handler.timeout_flag:
         # Chassis.forward()
-        move('f',chassis.ultrasound.object_front)
+        move('f')
 
         if chassis.event_handler.reset_flag and chassis.event_handler.timeout_flag:
             break
         time.sleep(0.5)
 
         # Chassis.right()
-        move('r',chassis.ultrasound.object_right)
+        move('r')
         if chassis.event_handler.reset_flag and chassis.event_handler.timeout_flag:
             break
 
