@@ -291,6 +291,7 @@ class Chassis:
         self.yaw_rate = 0
         self.time_global_start = time.time()
         self.imu_global_start = bot.get_imu_attitude_data()[2]
+        self.turn_num = 0
         self.intake = Intake()
         self.ultrasound = Ultrasound()
         self.event_handler = Event_Handler()
@@ -379,7 +380,7 @@ class Chassis:
                     self.action(pid_forward, yaw_start)
 
                 except KeyboardInterrupt:
-                    self.reset()
+                    self.stop()
                     break
         else:
             start = time.time()
@@ -391,7 +392,7 @@ class Chassis:
                 print("Distances:", distances)
                 print("Obstacles at directions: {}".format(self.ultrasound.check_obstacle))
                 self.action(pid_forward, yaw_start)
-        self.reset()
+        self.stop()
                
     def backward(self, duration = None):
         yaw_start = self.get_yaw_calibrated()
@@ -407,7 +408,7 @@ class Chassis:
                     print("Obstacles at directions: {}".format(self.ultrasound.check_obstacle))
                     self.action(pid_backward, yaw_start)
                 except KeyboardInterrupt:
-                    self.reset()
+                    self.stop()
                     break
         else:
             start = time.time()
@@ -419,7 +420,7 @@ class Chassis:
                 print("Distances:", distances)
                 print("Obstacles at directions: {}".format(self.ultrasound.check_obstacle))
                 self.action(pid_backward, yaw_start)
-        self.reset()
+        self.stop()
     
     def right(self, duration = None):
         yaw_start = self.get_yaw_calibrated()
@@ -432,7 +433,7 @@ class Chassis:
                     self.ultrasound.receive_distances()
                     self.action(pid_right, yaw_start)
                 except KeyboardInterrupt:
-                    self.reset()
+                    self.stop()
                     break
         else:
             start = time.time()
@@ -441,7 +442,7 @@ class Chassis:
                 self.ultrasound.receive_distances()
                 end = time.time()
                 self.action(pid_right, yaw_start)
-        self.reset()
+        self.stop()
         
     def left(self, duration = None):
         yaw_start = self.get_yaw_calibrated()
@@ -454,7 +455,7 @@ class Chassis:
                     self.ultrasound.receive_distances()
                     self.action(pid_left, yaw_start)
                 except KeyboardInterrupt:
-                    self.reset()
+                    self.stop()
                     break
         else:
             start = time.time()
@@ -463,7 +464,7 @@ class Chassis:
                 self.ultrasound.receive_distances()
                 end = time.time()
                 self.action(pid_left, yaw_start)
-        self.reset()
+        self.stop()
     
     def turn(self, angle): # -ve for right, +ve for left
         yaw_start = self.get_yaw_calibrated()
@@ -488,14 +489,54 @@ class Chassis:
                 # self.intake.set_eat_power()
                 time.sleep(0.1)
             except KeyboardInterrupt:
-                self.reset()
+                self.stop()
                 break
-            
-        self.reset()    
+
+        ######
+        if (angle < 0): #Assuming turns can only be +90 or -90
+            self.turn_num -= 1  
+        else:
+            self.turn_num += 1
+
+        self.stop()    
     
-    def reset(self):
+    def stop(self):
         bot.set_car_motion(0, 0 ,0)
         # self.intake.set_unload_power()
+
+    # May not need
+    def find_base(self):
+        # Input: 4 sets of xy coordinates - points
+        # Might have to make Lidar an attribute of Chassis Class, and call methods of Lidar
+        points = []
+        if self.turn % 4 == 0: # Base in Quadrant 3
+            for point in points:
+                if point[0] < 0 and point[1] < 0:
+                    return point
+        elif self.turn % 4 == 1: # Base in Quadrant 2
+            for point in points:
+                if point[0] < 0 and point[1] > 0:
+                    return point
+        elif self.turn % 4 == 2: # Base in Quadrant 1
+            for point in points:
+                if point[0] > 0 and point[1] > 0:
+                    return point
+        elif self.turn % 4 == 3:
+            for point in points: # Base in Quadrant 4
+                if point[0] > 0 and point[1] < 0:
+                    return point
+    
+    def revert_orientation(self):
+        num = self.turn_num - 2
+        print(num)
+        if num%4 == 3:
+            self.turn(90)
+            time.sleep(0.5)
+        else:
+            for i in range((num-2)%4):
+                self.turn(-90)
+                time.sleep(0.5)
+
     
 
 

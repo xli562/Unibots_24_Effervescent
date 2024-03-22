@@ -10,6 +10,8 @@ class Event_Handler():
         self.ser = serial.Serial("/dev/ttyACM0", 115200)
         self.reset_flag = False
         self.timeout_flag = False
+        self.timeout_duration = 30
+        self.iteration_start_time = time.time() #this tracks the starting time of current main loop iteration. When this > timeout_duration, should start returning.
         
     
     def check_restart(self):
@@ -29,6 +31,13 @@ class Event_Handler():
                         break # CHECK IF NEED THIS
         except Exception as e:
             print(e)
+    def check_timeout(self):
+        current_time = time.time()
+        if current_time - self.iteration_start_time > self.timeout_duration:
+            self.timeout_flag = True
+            # break
+            # 目前还没有加入上面这行的break，后面可以考虑一下这里需不需要这个break
+
 
     def empty_events(self):
         self.reset_flag = False
