@@ -127,17 +127,17 @@ while True:
         move('r', duration = 5) # 2 seconds move right
 
     # Going out, Searching & Grabbing
-    while chassis.event_handler.timeout_flag:
+    while not(chassis.event_handler.timeout_flag):
         # Chassis.forward()
         move('f')
 
-        if chassis.event_handler.reset_flag and chassis.event_handler.timeout_flag:
+        if chassis.event_handler.reset_flag or chassis.event_handler.timeout_flag:
             break
         time.sleep(0.5)
 
         # Chassis.right()
         move('r')
-        if chassis.event_handler.reset_flag and chassis.event_handler.timeout_flag:
+        if chassis.event_handler.reset_flag or chassis.event_handler.timeout_flag:
             break
 
     if chassis.event_handler.timeout_flag:
