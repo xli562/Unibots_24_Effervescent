@@ -1,9 +1,6 @@
 from RosmasterBoard import Rosmaster
 from Event_Handler import Event_Handler
-try:
-    from Chassis import Buzzer
-except:
-    pass
+
 
 import time, sys, subprocess, serial, threading, re
 import matplotlib.pyplot as plt
@@ -27,7 +24,7 @@ bot.clear_auto_report_data()
 def exponential_moving_average(new_value, previous_ema, alpha=0.1):
     return alpha * new_value + (1 - alpha) * previous_ema
 
-ser = serial.Serial("/dev/ttyACM0", 115200)
+# ser = serial.Serial("/dev/ttyACM0", 115200)
 # Rerun the current file
 def ROBOT_RESET():
     print("Restarting...")
@@ -522,7 +519,7 @@ class Lidar:
 
 NUM_OF_ULTRASOUND_SENSOR = 5
 class Ultrasound:
-    def __init__(self, com_port="/dev/ttyACM0", baud_rate=115200):
+    def __init__(self, com_port="/dev/ttyACM1", baud_rate=115200):
         self.ser = serial.Serial(com_port, baud_rate)
         self.distances = [0] * NUM_OF_ULTRASOUND_SENSOR  # Right_Bottom, Left, Front, Back, Right_Top
         self.updated_sensors = [False]*NUM_OF_ULTRASOUND_SENSOR
@@ -679,7 +676,7 @@ class Chassis:
         
         yaw_rate = (yaw_end - yaw)/(end-start)
         if yaw_rate == 0:
-            self.buzzer.beep_pattern('. .')
+            # self.buzzer.beep_pattern('. .')
             print('IMU IS NOT READING')
 
         self.yaw_rate = yaw_rate
@@ -725,7 +722,7 @@ class Chassis:
         self.vz = max(-10, min(control, 10))
         print("Error: {}, Control: {}, Vz: {}".format(error, control, self.vz))
         bot.set_car_motion(self.vx, self.vy, self.vz)
-        # self.intake.set_eat_power()
+        self.intake.set_eat_power()
         time.sleep(0.05)
 
     def forward(self, duration = None):
@@ -734,7 +731,7 @@ class Chassis:
         pid_forward = PID(0.5,0,0.1, setpoint=yaw_start)
         self.vx = 0.2
         self.vy = 0
-        if duration == None:
+        if duration is None:
             while not(self.ultrasound.object_front):
                 try:
                     self.ultrasound.receive_distances()
@@ -758,13 +755,13 @@ class Chassis:
                 print("Obstacles at directions: {}".format(self.ultrasound.check_obstacle))
                 self.action(pid_forward, yaw_start)
         self.stop()
-               
+                      
     def backward(self, duration = None):
         yaw_start = self.get_yaw_calibrated()
         pid_backward = PID(0.5,0,0.1, setpoint=yaw_start)
         self.vx = -0.2
         self.vy = 0
-        if duration == None:
+        if duration is None:
             while not(self.ultrasound.object_back):
                 try:
                     self.ultrasound.receive_distances()
@@ -867,7 +864,7 @@ class Chassis:
     
     def stop(self):
         bot.set_car_motion(0, 0 ,0)
-        # self.intake.set_unload_power()
+        self.intake.set_unload_power()
 
     # May not need
     def find_base(self):
