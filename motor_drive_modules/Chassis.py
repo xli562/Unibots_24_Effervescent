@@ -51,7 +51,6 @@ def check_restart():
         print(e)
 
 
-
 class Motor:
     def __init__(self, port):
         """ Initializes the motor on the given port. """
@@ -498,7 +497,6 @@ class Chassis:
         bot.set_car_motion(0, 0 ,0)
         # self.intake.set_unload_power()
     
-
 
 
 pass

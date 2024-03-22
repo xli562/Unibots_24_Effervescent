@@ -8,8 +8,14 @@ Thur. 2024/03/21
         - Completed infrastructure and fitting.
     Obstacle
         - Ultrasound can be triggered to stop robot. 
-        - HOWEVER: speed is too large. ultrasound collection/update rate cannot support effective obstacle avoidance. Therefore, need to lower speed and readjust PID control
+        - Solve the problem of speed is too high for obstacle detection. Re-finetuned PID for chassis motions. 
 
+    High-Level Algorithm
+        - Started Main.py. Started the main framework of our program. 
+        - Added the Event_Handler class that keeps track of flags and events. e.g. when Arduino reset is pressed.
+        - Decided to break return-to-base into two stages: 
+            1) From the 4 vertices of Lidar's output, find the actual corner of our base. Adjust robot's orientation accordingly. 
+            2) Alternate between forward & rightward motion (with obstacle avoidance), until reaching base
 
 Wed. 2024/03/20
     Overall
