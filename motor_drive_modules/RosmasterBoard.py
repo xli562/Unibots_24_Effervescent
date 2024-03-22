@@ -11,7 +11,7 @@ import threading
 class Rosmaster(object):
     __uart_state = 0
 
-    def __init__(self, car_type=1, com="/dev/ttyUSB0", delay=.002, debug=False):
+    def __init__(self, car_type=1, com="/dev/RosMasterBoard", delay=.002, debug=False):
         # com = "COM30"
         # com="/dev/ttyTHS1"
         # com="/dev/ttyUSB0"
@@ -1245,7 +1245,7 @@ if __name__ == '__main__':
                 continue
         print("--------------------Open %s---------------------" % com)
     else:
-        bot = Rosmaster(com="/dev/ttyUSB0", debug=True)
+        bot = Rosmaster(com="/dev/RosMasterBoard", debug=True)
     
     bot.create_receive_threading()
     time.sleep(.1)

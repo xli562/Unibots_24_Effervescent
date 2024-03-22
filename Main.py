@@ -3,7 +3,7 @@ from motor_drive_modules.Chassis import *
 import time
 import serial
 
-ser = serial.Serial("/dev/ttyACM0", 115200)
+ser = serial.Serial("/dev/Arduino", 115200)
 
 # Setup
 # bot = Rosmaster()
@@ -28,7 +28,7 @@ chassis.stop()
 time.sleep(2)
 bot.set_beep(100)
 # chassis = Chassis(ultrasound, lidar, intake, event_handler, buzzer)
-ser = serial.Serial("/dev/ttyACM0", 115200)
+
 
 print("Start Measure")
 yaw_rate = chassis.measure_stationary_yaw_drift_rate(15)

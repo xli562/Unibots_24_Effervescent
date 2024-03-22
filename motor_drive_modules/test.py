@@ -7,7 +7,7 @@ from Chassis import Chassis
 from RosmasterBoard import Rosmaster
 from ultrasound_via_arduino import Ultrasound
 
-ser = serial.Serial("/dev/ttyACM0", 115200)
+ser = serial.Serial("/dev/Arduino", 115200)
 
 
 # Rerun the current file
@@ -48,7 +48,7 @@ time.sleep(5)
 bot.set_beep(100)
 chassis = Chassis()
 ultrasound = Ultrasound()
-ser = serial.Serial("/dev/ttyACM0", 115200)
+ser = serial.Serial("/dev/Arduino", 115200)
 
 print("Start Measure")
 yaw_rate = chassis.measure_stationary_yaw_drift_rate(15)

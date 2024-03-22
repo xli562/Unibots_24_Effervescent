@@ -27,7 +27,7 @@ int main(int argc, char *argv[])
     #if defined(_WIN32)
     std::string port_name("com18");
     #else
-    std::string port_name("/dev/ttyACM0");
+    std::string port_name("/dev/Lidar");
     #endif
     int serialBaudrate = 230400;
     bool is_logging = true;

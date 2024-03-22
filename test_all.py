@@ -3,7 +3,7 @@ from motor_drive_modules.Chassis import *
 import time
 import serial
 
-ser = serial.Serial("/dev/ttyACM0", 115200)
+ser = serial.Serial("/dev/Arduino", 115200)
 
 ultrasound = Ultrasound(ser = ser)
 lidar = Lidar()

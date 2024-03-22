@@ -25,7 +25,7 @@ bot.clear_auto_report_data()
 def exponential_moving_average(new_value, previous_ema, alpha=0.1):
     return alpha * new_value + (1 - alpha) * previous_ema
 
-# ser = serial.Serial("/dev/ttyACM0", 115200)
+# ser = serial.Serial("/dev/Arduino", 115200)
 # Rerun the current file
 # def ROBOT_RESET():
 #     print("Restarting...")

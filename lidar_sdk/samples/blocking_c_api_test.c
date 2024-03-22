@@ -21,7 +21,7 @@ int main(int argc, char *argv[])
     #if defined(_WIN32)
     char port_name[50] = "com18";
     #else
-    char port_name[50] = "/dev/ttyUSB0";
+    char port_name[50] = "/dev/Lidar";
     #endif
     int baudrate = 230400;
     bool ret = false;

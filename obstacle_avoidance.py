@@ -11,7 +11,7 @@ import sys
 # # Clear cache sent from the Rosmaster board
 # bot.clear_auto_report_data()
 
-ser = serial.Serial("/dev/ttyACM0", 115200)
+ser = serial.Serial("/dev/Arduino", 115200)
 
 # Rerun the current file
 def ROBOT_RESET():
