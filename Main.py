@@ -61,7 +61,7 @@ def move(direction, duration = None):
 
 
     if duration is None:
-        while not(chassis.get_stopping_condition()):
+        while not(chassis.get_stopping_condition(direction)):
             chassis.ultrasound.receive_distances()
             distances = chassis.ultrasound.get_distances()  
             print("Distances:", distances)
@@ -70,7 +70,7 @@ def move(direction, duration = None):
     else:
         start = time.time()
         end = time.time()
-        while (end - start < duration) and not(chassis.get_stopping_condition()):
+        while (end - start < duration) and not(chassis.get_stopping_condition(direction)):
             end = time.time()
             chassis.ultrasound.receive_distances()
             distances = chassis.ultrasound.get_distances()  
