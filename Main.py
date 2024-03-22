@@ -1,16 +1,15 @@
 from motor_drive_modules.Event_Handler import Event_Handler
 from motor_drive_modules.Chassis import *
-from motor_drive_modules.RosmasterBoard import Rosmaster
 import time
 import serial
 
 
 
 # Setup
-bot = Rosmaster()
-bot.create_receive_threading()
-bot.set_auto_report_state(enable = True)
-bot.clear_auto_report_data()
+# bot = Rosmaster()
+# bot.create_receive_threading()
+# bot.set_auto_report_state(enable = True)
+# bot.clear_auto_report_data()
 
 ultrasound = Ultrasound()
 lidar = Lidar()
@@ -21,12 +20,14 @@ buzzer = Buzzer()
 
 print('START')
 print('Program Start with a sleep of 15 seconds')
-bot.set_car_motion(0,0,0)
-intake.set_free_drive()
+chassis = Chassis(ultrasound, lidar, intake, event_handler, buzzer)
+chassis.stop()
+# bot.set_car_motion(0,0,0)
+# intake.set_free_drive()
 
 time.sleep(15)
 bot.set_beep(100)
-chassis = Chassis(ultrasound, lidar, intake, event_handler, buzzer)
+# chassis = Chassis(ultrasound, lidar, intake, event_handler, buzzer)
 ser = serial.Serial("/dev/ttyACM0", 115200)
 
 print("Start Measure")
@@ -89,7 +90,7 @@ def turn(angle): # -ve for right, +ve for left
     previous_yaw = yaw_start
     while abs(yaw_start + angle - yaw) > 1:
         try:
-            yaw = chassis.gets_yaw_calibrated()
+            yaw = chassis.get_yaw_calibrated()
             if (yaw-previous_yaw) > 300:
                 yaw -= 360
             elif (yaw-previous_yaw) < -300:
@@ -108,11 +109,11 @@ def turn(angle): # -ve for right, +ve for left
 
     ######
     if (angle < 0): #Assuming turns can only be +90 or -90
-        self.turn_num -= 1  
+        chassis.turn_num -= 1  
     else:
-        self.turn_num += 1
+        chassis.turn_num += 1
 
-    self.stop()    
+    chassis.stop()    
 
 
 
@@ -144,11 +145,11 @@ while True:
         chassis.revert_orientation()
         
         
-    # return loop
-    while (abs(chassis.find_base[0] > 45)) or (abs(chassis.find_base[1]) > 45):
-        if chassis.find_base[0] > 45:
-            chassis.forward()
-        if chassis.find_base[1] > 45:
-            chassis.right()
+    # # return loop
+    # while (abs(chassis.find_base[0] > 45)) or (abs(chassis.find_base[1]) > 45):
+    #     if chassis.find_base[0] > 45:
+    #         chassis.forward()
+    #     if chassis.find_base[1] > 45:
+    #         chassis.right()
        
 
