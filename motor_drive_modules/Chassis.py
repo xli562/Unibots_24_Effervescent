@@ -195,6 +195,10 @@ class Lidar:
 
     def __init__(self):
         self._blocking = False
+        # Threads management
+        self._threads = []
+        self._terminate_all_threads = threading.Event()
+        self._terminate_all_threads.clear()
         self._last_reading = np.array([0., 0., 0.])
         # A list of fixed length 450 to store data for the last complete cycle
         self._last_cycle_readings = np.array([[0., 0., 0.]])
@@ -205,10 +209,6 @@ class Lidar:
         self._start_autoreceive_readings_thread()
         self._check_connection(timeout=5)
         self._new_data_available = False
-        # Threads management
-        self._threads = []
-        self._terminate_all_threads = threading.Event()
-        self._terminate_all_threads.clear()
     
 
     def __new__(cls, *args, **kwargs):
@@ -224,11 +224,11 @@ class Lidar:
         self._terminate_all_threads.set()
         for thread in self._threads:
             thread.join()
-        try:
-            buzzer = Buzzer()
-            buzzer.beep_pattern('....  .. -')
-        except:
-            pass
+        # try:
+        #     buzzer = Buzzer()
+        #     buzzer.beep_pattern('....  .. -')
+        # except:
+        #     pass
 
 
     def _check_connection(self, timeout=5):
@@ -679,7 +679,8 @@ class Chassis:
         
         yaw_rate = (yaw_end - yaw)/(end-start)
         if yaw_rate == 0:
-            self.buzzer.beep_pattern('...')
+            self.buzzer.beep_pattern('. .')
+            print('IMU IS NOT READING')
 
         self.yaw_rate = yaw_rate
 
@@ -788,7 +789,7 @@ class Chassis:
     
     def right(self, duration = None):
         yaw_start = self.get_yaw_calibrated()
-        pid_right = PID(0.1, 0, 0.05, setpoint=yaw_start)
+        pid_right = PID(0.05, 0, 0.05, setpoint=yaw_start)
         self.vx = 0
         self.vy = 0.2
         if duration == None:
