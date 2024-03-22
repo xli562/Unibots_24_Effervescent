@@ -2,6 +2,16 @@
 
 
 
+Fri. 2024/03/22
+    TODO:
+        - Clean up lidar code
+        - fix sagging point finding
+        - write separate function for lidar -45deg - +45deg angle deviation
+        - integrate plotter into lidar
+        - write find base function
+        - unload table tennis balls after each reset.
+
+
 Thur. 2024/03/21
     TODO: change arduino pin
     Lidar
@@ -14,8 +24,9 @@ Thur. 2024/03/21
         - Started Main.py. Started the main framework of our program. 
         - Added the Event_Handler class that keeps track of flags and events. e.g. when Arduino reset is pressed.
         - Decided to break return-to-base into two stages: 
-            1) From the 4 vertices of Lidar's output, find the actual corner of our base. Adjust robot's orientation accordingly. 
-            2) Alternate between forward & rightward motion (with obstacle avoidance), until reaching base
+            1. From the 4 vertices of Lidar's output, find the actual corner of our base. Adjust robot's orientation accordingly. 
+            2. Alternate between forward & rightward motion (with obstacle avoidance), until reaching base
+
 
 Wed. 2024/03/20
     Overall
@@ -37,6 +48,28 @@ Wed. 2024/03/20
         - Started obstacle avoidance - aims to use readings from ultrasound to stop moving, etc. 
         TODO: 
         - Some code is written but no testing has been done. 
+    Environment setup:
+        - 重装了系统
+        - 取消自动熄屏：左上角 -> Settings -> Power -> Blank screen -> set to ‘never’
+        - Bash sudo apt-get update
+        - Bash sudo apt-get upgrade -y
+        - Select ‘upgrade’ for all prompts
+        - Bash sudo apt full-upgrade -y
+        - **DO NOT run sudo apt autoremove !!!!**
+        - Bash sudo apt-get install python3-pyqt5 tk-dev qt5-default pyqt5-dev pyqt5-dev-tools
+        - Download, make and install python as shown in the Thur. 2024/03/14 log:
+        - Difference in the commands ran:
+        - Bash ./configure --enable-optimizations
+        - Bash make <This takes around 25 mins>
+        - Bash sudo make altinstall
+        - Install code-oss as shown in the same dev log.
+        - Bash sudo pip3.10 install tk
+        - Create and cd to a testing folder
+        - Bash python3.10 -m venv testenv
+        - Bash source testenv/bin/activate
+        - Bash pip3.10 install matplotlib
+        - Test matplotlib. It should be working.
+        - 设置自动熄屏时间为5分钟。
         
 
 Tue. 2024/03/19
