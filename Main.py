@@ -35,6 +35,7 @@ def get_target():
 # Main Loop
 while True:
     chassis.event_handler.empty_events()
+    chassis.event_handler.iteration_start_time = time.time()
 
     while True:
         Chassis.forward()
