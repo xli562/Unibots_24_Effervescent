@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 #coding=utf-8
 import time
-from Rosmaster_Lib import Rosmaster
+from RosmasterBoard import Rosmaster
 
 # 创建Rosmaster对象 bot Create the Rosmaster object bot
 bot = Rosmaster()
