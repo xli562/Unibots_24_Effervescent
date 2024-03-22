@@ -1,5 +1,6 @@
-from RosmasterBoard import Rosmaster
-from Event_Handler import Event_Handler
+print(2)
+from .RosmasterBoard import Rosmaster
+from .Event_Handler import Event_Handler
 
 
 import time, sys, subprocess, serial, threading, re
@@ -204,6 +205,7 @@ class Lidar:
         self._last_fitted_angle_error = 0
         self._last_fitted_arena_vertices = np.array([[0., 0.], [0., 0.], [0., 0.], [0., 0.]])
         self._start_autoreceive_readings_thread()
+        self._start_periodic_fitting_thread()
         self._check_connection(timeout=5)
         self._new_data_available = False
     
@@ -519,8 +521,8 @@ class Lidar:
 
 NUM_OF_ULTRASOUND_SENSOR = 5
 class Ultrasound:
-    def __init__(self, com_port="/dev/ttyACM1", baud_rate=115200):
-        self.ser = serial.Serial(com_port, baud_rate)
+    def __init__(self, ser):
+        self.ser = ser
         self.distances = [0] * NUM_OF_ULTRASOUND_SENSOR  # Right_Bottom, Left, Front, Back, Right_Top
         self.updated_sensors = [False]*NUM_OF_ULTRASOUND_SENSOR
         self.updated = False # 用来判断是否所有UltrasoundSensor都更新了最新读数
@@ -658,6 +660,7 @@ class Chassis:
     def measure_stationary_yaw_drift_rate(self, duration, plot=False):
         yaws=[]
         times=[]
+        self.imu_global_start = bot.get_imu_attitude_data()[2]
 
         start = time.time()
         roll, pitch, yaw = bot.get_imu_attitude_data()
@@ -715,7 +718,7 @@ class Chassis:
         return yaw
 
     def action(self, controller, yaw_start):
-        self.event_handler.check_restart()
+        # self.event_handler.check_restart()
         yaw = self.get_yaw_calibrated()
         control = controller(yaw)
         error = yaw_start - yaw 
@@ -837,7 +840,7 @@ class Chassis:
         previous_yaw = yaw_start
         while abs(yaw_start + angle - yaw) > 1:
             try:
-                yaw = self.gets_yaw_calibrated()
+                yaw = self.get_yaw_calibrated()
                 if (yaw-previous_yaw) > 300:
                     yaw -= 360
                 elif (yaw-previous_yaw) < -300:
@@ -864,7 +867,7 @@ class Chassis:
     
     def stop(self):
         bot.set_car_motion(0, 0 ,0)
-        self.intake.set_unload_power()
+        self.intake.set_free_drive()
 
     # May not need
     def find_base(self):
@@ -907,3 +910,4 @@ class Chassis:
 
 
 pass
+print(1)

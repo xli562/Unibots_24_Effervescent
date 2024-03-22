@@ -3,7 +3,7 @@ from motor_drive_modules.Chassis import *
 import time
 import serial
 
-
+ser = serial.Serial("/dev/ttyACM0", 115200)
 
 # Setup
 # bot = Rosmaster()
@@ -11,10 +11,10 @@ import serial
 # bot.set_auto_report_state(enable = True)
 # bot.clear_auto_report_data()
 
-ultrasound = Ultrasound()
+ultrasound = Ultrasound(ser = ser)
 lidar = Lidar()
 intake = Intake()
-event_handler = Event_Handler()
+event_handler = Event_Handler(ser = ser)
 buzzer = Buzzer()
 
 
@@ -25,7 +25,7 @@ chassis.stop()
 # bot.set_car_motion(0,0,0)
 # intake.set_free_drive()
 
-time.sleep(15)
+time.sleep(2)
 bot.set_beep(100)
 # chassis = Chassis(ultrasound, lidar, intake, event_handler, buzzer)
 ser = serial.Serial("/dev/ttyACM0", 115200)

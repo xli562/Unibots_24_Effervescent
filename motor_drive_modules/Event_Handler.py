@@ -6,8 +6,8 @@ index_in = 0
 
 class Event_Handler():
 
-    def __init__(self):
-        self.ser = serial.Serial("/dev/ttyACM1", 115200)
+    def __init__(self, ser):
+        self.ser = ser
         self.reset_flag = False
         self.timeout_flag = False
         self.timeout_duration = 30
