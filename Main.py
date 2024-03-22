@@ -27,6 +27,10 @@ bot.set_beep(100)
 print("Yaw Rate: {}".format(yaw_rate))
 print('IMU gloabl start: {}'.format(chassis.imu_global_start))
 
+# pseudo function for getting target
+def get_target():
+    return (-1.23, -3.45, 20) # sx, y, angle
+
 
 # Main Loop
 while True:
@@ -45,4 +49,11 @@ while True:
         # ....
     while chassis.event_handler.timeout_flag:
         pass
+
+    # return loop
+    while (abs(get_target[0]) > 10) and (abs(get_target[1]) > 15):
+        chassis.forward()
+        chassis.right()
+        if get_target[2] > 10:
+            chassis.turn(get_target[2])
 
