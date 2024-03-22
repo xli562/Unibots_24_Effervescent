@@ -16,13 +16,14 @@ ultrasound = Ultrasound()
 lidar = Lidar()
 intake = Intake()
 event_handler = Event_Handler()
+buzzer = Buzzer()
 
 
 print('START')
 print('Program Start with a sleep of 15 seconds')
 time.sleep(15)
 bot.set_beep(100)
-chassis = Chassis(ultrasound, lidar, intake, event_handler)
+chassis = Chassis(ultrasound, lidar, intake, event_handler, buzzer)
 ser = serial.Serial("/dev/ttyACM0", 115200)
 
 print("Start Measure")

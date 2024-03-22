@@ -19,7 +19,7 @@ ultrasound = Ultrasound()
 ser = serial.Serial("/dev/ttyACM0", 115200)
 
 print("Start Measure")
-yaw_rate = chassis.measure_stationary_yaw_drift_rate(15)
+yaw_rate = chassis.measure_statixonary_yaw_drift_rate(15)
 bot.set_beep(100)
 print("Yaw Rate: {}".format(yaw_rate))
 print('IMU gloabl start: {}'.format(chassis.imu_global_start))
