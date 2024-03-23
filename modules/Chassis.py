@@ -17,8 +17,8 @@ bot.clear_auto_report_data()
 
 class EventHandler:
     """ Class to set event flags to break out loops """
-    def __init__(self, ser):
-        self.ser = ser
+
+    def __init__(self, getter, setter):
         self.reset_flag = False
         self.timeout_flag = False
         self.timeout_duration = 30
@@ -46,7 +46,9 @@ class EventHandler:
     
     
     def check_timeout(self):
-        """ Check if the program has been running longer than the specified duration (self.timeout_duration) """
+        """ Check if the program has been running longer than the 
+        specified duration (self.timeout_duration) """
+
         current_time = time.time()
         if current_time - self.iteration_start_time > self.timeout_duration:
             self.timeout_flag = True
@@ -56,6 +58,7 @@ class EventHandler:
 
     def empty_events(self):
         """ Empty the event flags """
+
         self.reset_flag = False
         self.timeout_flag = False
 
@@ -231,8 +234,9 @@ class Buzzer:
 class Lidar:
     _instance = None    # Needed for the __new__() method
 
-    def __init__(self):
+    def __init__(self, beep_pattern):
         self._blocking = False
+        self._beep_pattern = beep_pattern
         # Threads management
         self._threads = []
         self._terminate_all_threads = threading.Event()
@@ -276,9 +280,9 @@ class Lidar:
         def check_reading():
             while not self._terminate_all_threads.is_set():
                 if self._last_reading.size == 0:
+                    print(f'Warning: Not receiving data from Lidar after timeout={timeout} seconds')
                     try:
-                        buzzer = Buzzer()
-                        buzzer.beep_pattern('....  .   .  ', 5)
+                        self._beep_pattern('....-.')
                     except:
                         pass
         thread = threading.Timer(timeout, check_reading)
@@ -561,11 +565,13 @@ class Arduino:
 
     _instance = None    # Needed for the __new__() method
 
-    def __init__(self):
+    def __init__(self, beep_pattern):
         # Serial port
         self._ser = serial.Serial("/dev/Arduino", 115200)
+        self._beep_pattern = beep_pattern
         # Cached accessible readings
-        self._last_ultrasound_readings = None
+        self._last_ultrasound_readings = np.array([0., 0., 0., 0., 0.])
+        self._ultrasound_new_reading_available = False
         self._flag_received_reset = False
         # Threads management
         self._threads = []
@@ -575,7 +581,7 @@ class Arduino:
         
 
     def __new__(cls, *args, **kwargs):
-        """ To prevent the Lidar instance from being created
+        """ To prevent the Arduino instance from being created
         multiple times. """
 
         if not cls._instance:
@@ -590,10 +596,32 @@ class Arduino:
         self._terminate_all_threads.clear()
 
 
+    def _check_connection(self, timeout=5):
+        """ Checks the Arduino connection.
+        If the last reading is still empty after 5 seconds, 
+        buzz the buzzer in a specific pattern if buzzer is connected. 
+        
+        :param timeout: the wait time before checking if arduino returns readings"""
+
+        def check_arduino_reading():
+            while not self._terminate_all_threads.is_set():
+                if self._last_ultrasound_readings.size == 0:
+                    print(f'Warning: Not receiving ultrasound readings from Arduino after timeout={timeout} seconds')
+                    try:
+                        self.buzzer.beep_pattern('.--..')
+                    except:
+                        pass
+        thread = threading.Timer(timeout, check_arduino_reading)
+        self._threads.append(thread)
+        thread.start()
+
+
     def test_arduino_receive(self):
         """ Tests the arduino class by 
         printing out data received from the arduino. """
-        pass
+
+        print(f'_last_ultrasound_readings {self._last_ultrasound_readings}')
+        print(f'_flag_received_reset {self._flag_received_reset}')
 
 
     def _start_scan_serial_thread(self):
@@ -606,27 +634,53 @@ class Arduino:
                     line = raw_line.decode('utf-8')
                     if line.startswith("U"):
                         # Recieved ultrasonic reading
-                        readings = line.split(',')
-                        ####(Max)####
-                        ultrasonic_index = 0
-                        #############
-                        for reading in readings:
-                            # splitted_readings = reading.split(':') # e.g. [U1, 50]
-                            # ultrasonic_distance = int(splitted_readings[1]) # e.g. 50
-                            ####(Max)####
-                            # ultrasonic_index = int(splitted_readings[0][1]) # e.g. 1
-                            self.update_distance(ultrasonic_distance, ultrasonic_index)
-                            ultrasonic_index += 1
-                            #############
-                            print(splitted_readings)
+                        readings_str = line.split(',')
+                        self._last_ultrasound_readings = np.array([int(reading) for reading in readings_str])
+                        self._ultrasound_new_reading_available = True
                     elif line.startswith("R"):
                         self._flag_received_reset = True
                 except Exception as e:
-                    print(e)
+                    print(f'Exception while listening serial from Arduino: \n{e}')
         thread = threading.Thread(target=listen_serial)
         self._threads.append(thread)
         thread.start()
 
+
+    def get_last_ultrasound_readings(self) -> np.ndarray:
+        """ Returns last ultrasound readings read from arduino via serial """
+        self._ultrasound_new_reading_available = False
+        return self._last_ultrasound_readings
+
+
+    def ultrasound_new_reading_available(self) -> bool:
+        return self._ultrasound_new_reading_available
+
+
+    def get_reset_flag(self) -> bool:
+        """ Returns the reset flag """
+
+        return self._flag_received_reset
+
+
+    def clear_reset_flag(self):
+        """ Clears the _flag_received_reset, to get ready for the next reset event. """ 
+
+        self._flag_received_reset = False
+
+
+
+class Ultrasound:
+    """ Class that reads ultrasound sensors from Arduino and identifies obstacles """
+
+    def __init__(self):
+        # Cached accessible readings
+        # Right_Bottom, Left, Front, Back, Right_Top
+        self._distances = np.array([0., 0., 0., 0., 0.])
+        # Robust triggering
+        self.obstacle_trigger_count = [0] * 5 # 代表了连续几次iteration检测到了obstacle，为了避免随机触发
+        self.rugby_trigger_count = 0 # 同理，代表连续几次检测到了rugby
+
+    
     def update_distance(self, distance, sensor_index):
         self._distances[sensor_index] = distance
         if (distance < 30 and distance > 0):
@@ -634,11 +688,13 @@ class Arduino:
         else:
             self.obstacle_trigger_count[sensor_index] = 0
 
+
     def get_distances(self):
         if (self.updated):
             return self._distances
         else:
             self.receive_distances()
+
 
     def detect_rugby(self):
         # TODO: under construction
@@ -687,20 +743,6 @@ class Arduino:
             if self._distances[i] < 20 and self._distances[i] > 0:
                 obstacle.append(i)
         return obstacle
-
-
-
-class Ultrasound:
-    """ Class that reads ultrasound sensors from Arduino and identifies obstacles """
-
-    def __init__(self):
-        # Cached accessible readings
-        # Right_Bottom, Left, Front, Back, Right_Top
-        self._distances = np.array([0., 0., 0., 0., 0.])
-        # Robust triggering
-        self.obstacle_trigger_count = [0] * 5 #代表了连续几次iteration检测到了obstacle，为了避免随机触发
-        self.rugby_trigger_count = 0 #同理，代表连续几次检测到了rugby
-
 
 
 class Chassis:
