@@ -44,19 +44,19 @@ def move(direction, duration=None): # getter represents the getter function to r
 
     if duration is None:
         while not(chassis.event_handler.reset_flag): ####(Max)#### Added the chassis.event_handler.reset_flag
-            chassis.ultrasound.receive_distances()
+            chassis._ultrasound.receive_distances()
             chassis.event_handler.check_reset()
             if chassis.event_handler.reset_flag:
                 break
             print(direction) 
-            print(f'Obstacles at directions: {chassis.ultrasound.check_all_obstacles}')
+            print(f'Obstacles at directions: {chassis._ultrasound.check_all_obstacles}')
             chassis.action(pid, yaw_start)
     else:
         start = time.time()
         end = time.time()
         while (end - start < duration) and not(chassis.event_handler.reset_flag):  ####(Max)#### Added the chassis.event_handler.reset_flag
             end = time.time()
-            chassis.ultrasound.receive_distances()
+            chassis._ultrasound.receive_distances()
             chassis.action(pid, yaw_start)
 
     chassis.stop()

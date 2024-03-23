@@ -12,15 +12,16 @@ servo = Servo()
 intake = Intake()
 lidar = Lidar(buzzer.beep_pattern)
 arduino_board = Arduino(buzzer.beep_pattern)
-ultrasound = Ultrasound(arduino_board)
-event_handler = EventHandler(arduino_board)
-chassis = Chassis(ultrasound, lidar, intake, event_handler)
+ultrasound = Ultrasound(arduino_board.ultrasound_new_reading_available,
+                        arduino_board.get_last_ultrasound_readings)
+event_handler = EventHandler(arduino_board.received_reset)
+chassis = Chassis(buzzer.beep_pattern, intake, lidar, event_handler)
 chassis.stop()
 
 
 print('START')
 if do_stationary_test:
-    print('Program Start without a sleep of 15 seconds')
+    print('Program Start without sleep')
 else:
     print('Program Start with a sleep of 15 seconds')
     time.sleep(2)
@@ -35,7 +36,11 @@ chassis.imu_init_angle_offset = chassis.get_yaw_calibrated()
 print(f'Yaw Rate: {yaw_rate}')
 print(f'IMU gloabl start: {chassis.imu_init_angle_offset}')
 
-def move(direction, duration=None, getter=chassis.get_stopping_condition): # getter represents the getter function to retrieve stoping condition from ultrasound
+def move(direction:str, duration=None, 
+         check_obstacle=ultrasound.check_obstacle): 
+    """
+    :param check_obstacle: the getter function to retrieve stoping 
+        condition from ultrasound """
     yaw_start = chassis.get_yaw_calibrated()
     if direction == 'f':
         # yaw_start = chassis.get_yaw_calibrated()
@@ -61,20 +66,18 @@ def move(direction, duration=None, getter=chassis.get_stopping_condition): # get
         raise Exception(f'Direction has to be "f", "b", "l" or "r", got {direction}.')
 
     if duration is None:
-        while not getter(direction) and not(chassis.event_handler.reset_flag): ####(Max)#### Added the chassis.event_handler.reset_flag
-            chassis.ultrasound.receive_distances()
+        while not check_obstacle(direction) and not(chassis.event_handler.reset_flag): ####(Max)#### Added the chassis.event_handler.reset_flag
             chassis.event_handler.check_reset()
             if chassis.event_handler.reset_flag:
                 break
             print(direction) 
-            print(f'Obstacles at directions: {chassis.ultrasound.check_all_obstacles}')
+            print(f'Obstacles at directions: {chassis._ultrasound.check_all_obstacles()}')
             chassis.action(pid, yaw_start)
     else:
         start = time.time()
         end = time.time()
-        while (end - start < duration) and not(getter(direction)) and not(chassis.event_handler.reset_flag):  ####(Max)#### Added the chassis.event_handler.reset_flag
+        while (end - start < duration) and not(check_obstacle(direction)) and not(chassis.event_handler.reset_flag):  ####(Max)#### Added the chassis.event_handler.reset_flag
             end = time.time()
-            chassis.ultrasound.receive_distances()
             chassis.action(pid, yaw_start)
 
     chassis.stop()
@@ -100,7 +103,7 @@ def turn(angle): # -ve for clockwise, +ve for anticlockwise
             chassis.vz = max(-10, min(control, 10))
             print(f'Error: {error}, Control: {control}, Vz: {chassis}')
             bot.set_car_motion(chassis.vx, chassis.vy, chassis.vz)
-            chassis.intake.set_eat_power()
+            chassis._intake.eat()
             time.sleep(0.1)
         except KeyboardInterrupt:
             chassis.stop()
