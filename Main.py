@@ -86,6 +86,13 @@ def move(direction:str, duration=None,
 
     chassis.stop()
     
+def distance_to_wall(direction):
+    if direction == "f":
+        return (chassis.find_base[1] <  60)
+    elif direction == "r":
+        return (chassis.find_base[0] <  45)
+
+
 
 def turn(angle): # -ve for clockwise, +ve for anticlockwise
     yaw_start = chassis.get_yaw_calibrated()
@@ -164,14 +171,15 @@ while True:
         x_base = 100
         y_base = 100
         while x_base > 45 or y_base > 45:
-            if y_base > 45:
-                move('f')
+            if y_base > 60:
+                move('f', check_obstacle=distance_to_wall)
                 base = chassis.find_base()
                 x_base, y_base = base[0], base[1]
             if x_base > 45:
-                move('r')
+                move('r', check_obstacle=distance_to_wall)
                 base = chassis.find_base()
                 x_base, y_base = base[0], base[1]
+        
 
     if (chassis.event_handler.reset_flag):
         time.sleep(10)
