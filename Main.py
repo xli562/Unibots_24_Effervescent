@@ -36,7 +36,7 @@ bot.set_beep(100)
 print("Yaw Rate: {}".format(yaw_rate))
 print('IMU gloabl start: {}'.format(chassis.imu_global_start))
 
-def move(direction, duration = None):
+def move(direction, duration = None, getter = chassis.get_stopping_condition): # getter represents the getter function to retrieve stoping condition from ultrasound
     yaw_start = chassis.get_yaw_calibrated()
     if direction == 'f':
         # yaw_start = chassis.get_yaw_calibrated()
@@ -61,7 +61,7 @@ def move(direction, duration = None):
 
 
     if duration is None:
-        while not(chassis.get_stopping_condition(direction)):
+        while not(getter(direction)):
             chassis.ultrasound.receive_distances()
             distances = chassis.ultrasound.get_distances()  
             print("Distances:", distances)
@@ -70,7 +70,7 @@ def move(direction, duration = None):
     else:
         start = time.time()
         end = time.time()
-        while (end - start < duration) and not(chassis.get_stopping_condition(direction)):
+        while (end - start < duration) and not(getter(direction)):
             end = time.time()
             chassis.ultrasound.receive_distances()
             distances = chassis.ultrasound.get_distances()  

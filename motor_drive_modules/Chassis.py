@@ -656,6 +656,7 @@ class Chassis:
         self.lidar = lidar
         self.event_handler = event_handler
         self.buzzer = buzzer
+
     def get_stopping_condition(self,direction):
         if direction == 'f':
             return self.ultrasound.object_front
@@ -667,6 +668,7 @@ class Chassis:
             return self.ultrasound.object_left
         else:
             return self.ultrasound.object_front
+            
     def measure_stationary_yaw_drift_rate(self, duration, plot=False):
         yaws=[]
         times=[]
