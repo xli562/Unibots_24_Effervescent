@@ -64,10 +64,6 @@ def move(direction, duration=None, getter=chassis.get_stopping_condition): # get
 
     if duration is None:
         while not getter(direction) and not(chassis.event_handler.reset_flag): ####(Max)#### Added the chassis.event_handler.reset_flag
-            ####(Max)####
-
-
-            #############
             chassis.ultrasound.receive_distances()
             chassis.event_handler.check_reset()
             if chassis.event_handler.reset_flag:
@@ -156,7 +152,7 @@ while True:
         time.sleep(5)
         #chassis.revert_orientation()
     
-    
+
         
     # # return loop
     # x_base = 100

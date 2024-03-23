@@ -604,17 +604,20 @@ class Arduino:
                     if line.startswith("U"):
                         # Recieved ultrasonic reading
                         readings = line.split(',')
+                        ####(Max)####
+                        ultrasonic_index = 0
+                        #############
                         for reading in readings:
-                            splitted_readings = reading.split(':') # e.g. [U1, 50]
-                            ultrasonic_distance = int(splitted_readings[1]) # e.g. 50
+                            # splitted_readings = reading.split(':') # e.g. [U1, 50]
+                            # ultrasonic_distance = int(splitted_readings[1]) # e.g. 50
                             ####(Max)####
-                            ultrasonic_index = int(splitted_readings[0][1]) # e.g. 1
-                            self.uaxpdate_distance(ultrasonic_distance, ultrasonic_index)
+                            # ultrasonic_index = int(splitted_readings[0][1]) # e.g. 1
+                            self.update_distance(ultrasonic_distance, ultrasonic_index)
+                            ultrasonic_index += 1
                             #############
                             print(splitted_readings)
                     elif line.startswith("R"):
                         self._flag_received_reset = True
-                        ####(Max)#### Question: Why do not just set the flag of event_handler? What is this flag_received do?
                 except Exception as e:
                     print(e)
         thread = threading.Thread(target=listen_serial)
