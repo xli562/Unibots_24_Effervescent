@@ -115,9 +115,9 @@ def turn(angle): # -ve for clockwise, +ve for anticlockwise
 
 
     ######
-    if (angle < 0): #Assuming turns can only be +90 or -90
+    if (angle == -90): #Assuming turns can only be +90 or -90
         chassis.turn_num -= 1  
-    else:
+    elif (angle ==  90):
         chassis.turn_num += 1
 
     chassis.stop()    
@@ -155,23 +155,25 @@ while True:
         print('Returning to scoring area')
         buzzer.beep_pattern('...')
         time.sleep(5)
-        #chassis.revert_orientation()
+        chassis.revert_orientation()
+        # After reverting, num of turns should = 2
     
+
+    # return loop
+    if (chassis.event_handler.timeout_flag) and not(chassis.event_handler.reset_flag):
+        x_base = 100
+        y_base = 100
+        while x_base > 45 or y_base > 45:
+            if y_base > 45:
+                move('f')
+                base = chassis.find_base()
+                x_base, y_base = base[0], base[1]
+            if x_base > 45:
+                move('r')
+                base = chassis.find_base()
+                x_base, y_base = base[0], base[1]
+
     if (chassis.event_handler.reset_flag):
         time.sleep(10)
-
-        
-    # # return loop
-    # x_base = 100
-    # y_base = 100
-    # while x_base > 45 or y_base > 45:
-    #     if y_base > 45:
-    #         move('f')
-    #         base = chassis.find_base()
-    #         x_base, y_base = base[0], base[1]
-    #     if x_base > 45:
-    #         move('r')
-    #         base = chassis.find_base()
-    #         x_base, y_base = base[0], base[1]
        
 
