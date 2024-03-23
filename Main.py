@@ -63,7 +63,11 @@ def move(direction, duration=None, getter=chassis.get_stopping_condition): # get
         raise Exception(f'Direction has to be "f", "b", "l" or "r", got {direction}.')
 
     if duration is None:
-        while not getter(direction):
+        while not getter(direction) and not(chassis.event_handler.reset_flag): ####(Max)#### Added the chassis.event_handler.reset_flag
+            ####(Max)####
+
+
+            #############
             chassis.ultrasound.receive_distances()
             chassis.event_handler.check_reset()
             if chassis.event_handler.reset_flag:
@@ -74,7 +78,7 @@ def move(direction, duration=None, getter=chassis.get_stopping_condition): # get
     else:
         start = time.time()
         end = time.time()
-        while (end - start < duration) and not(getter(direction)):
+        while (end - start < duration) and not(getter(direction)) and not(chassis.event_handler.reset_flag):  ####(Max)#### Added the chassis.event_handler.reset_flag
             end = time.time()
             chassis.ultrasound.receive_distances()
             chassis.action(pid, yaw_start)
@@ -142,12 +146,17 @@ while True:
             break
         chassis.event_handler.check_timeout()
 
+
     # Turn to correct orientation for return-to-base to begin
-    print('Returning to scoring area')
-    buzzer.beep_pattern('...')
-    time.sleep(5)
-    #chassis.revert_orientation()
-        
+    ####(Max)####
+    if chassis.event_handler.timeout_flag and not(chassis.event_handler.reset_flag):
+
+        print('Returning to scoring area')
+        buzzer.beep_pattern('...')
+        time.sleep(5)
+        #chassis.revert_orientation()
+    
+    
         
     # # return loop
     # x_base = 100

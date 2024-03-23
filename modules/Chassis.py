@@ -605,11 +605,16 @@ class Arduino:
                         # Recieved ultrasonic reading
                         readings = line.split(',')
                         for reading in readings:
-                            splitted_readings = reading.split(':')
-                            ultrasonic_distance = int(splitted_readings[1])
+                            splitted_readings = reading.split(':') # e.g. [U1, 50]
+                            ultrasonic_distance = int(splitted_readings[1]) # e.g. 50
+                            ####(Max)####
+                            ultrasonic_index = int(splitted_readings[0][1]) # e.g. 1
+                            self.uaxpdate_distance(ultrasonic_distance, ultrasonic_index)
+                            #############
                             print(splitted_readings)
                     elif line.startswith("R"):
                         self._flag_received_reset = True
+                        ####(Max)#### Question: Why do not just set the flag of event_handler? What is this flag_received do?
                 except Exception as e:
                     print(e)
         thread = threading.Thread(target=listen_serial)
@@ -781,7 +786,7 @@ class Chassis:
         return yaw
 
     def action(self, controller, yaw_start):
-        self.event_handler.check_reset() ###
+        # self.event_handler.check_reset() ###
         yaw = self.get_yaw_calibrated()
         control = controller(yaw)
         error = yaw_start - yaw 
