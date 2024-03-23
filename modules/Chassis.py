@@ -212,13 +212,13 @@ class Lidar:
         self._new_data_available = False
     
 
-    def __new__(cls, *args, **kwargs):
-        """ To prevent the Lidar instance from being created
-        multiple times. """
+    # def __new__(cls, *args, **kwargs):
+    #     """ To prevent the Lidar instance from being created
+    #     multiple times. """
 
-        if not cls._instance:
-            cls._instance = super(Lidar, cls).__new__(cls, *args, **kwargs)
-        return cls._instance
+    #     if not cls._instance:
+    #         cls._instance = super(Lidar, cls).__new__(cls, *args, **kwargs)
+    #     return cls._instance
 
 
     def __del__(self):
@@ -543,13 +543,13 @@ class Arduino:
         self._start_scan_serial_thread()
         
 
-    def __new__(cls, *args, **kwargs):
-        """ To prevent the Arduino instance from being created
-        multiple times. """
+    # def __new__(cls, *args, **kwargs):
+    #     """ To prevent the Arduino instance from being created
+    #     multiple times. """
 
-        if not cls._instance:
-            cls._instance = super(Arduino, cls).__new__(cls, *args, **kwargs)
-        return cls._instance
+    #     if not cls._instance:
+    #         cls._instance = super(Arduino, cls).__new__(cls, *args, **kwargs)
+    #     return cls._instance
 
 
     def __del__(self):
@@ -597,9 +597,15 @@ class Arduino:
                     line = raw_line.decode('utf-8')
                     if line.startswith("U"):
                         # Recieved ultrasonic reading
+                        line = line[1:-2]
                         readings_str = line.split(',')
+                        j = 0
+                        for reading_str in readings_str:
+                            if reading_str == '':
+                                readings_str[j] = '255'
+                            j += 1
                         self._last_ultrasound_readings = np.array([int(reading) for reading in readings_str])
-                        self.ultrasound_new_reading_available = True
+                        self.ultrasound_new_reading_available.set()
                     elif line.startswith("R"):
                         self.received_reset = True
                 except Exception as e:
@@ -624,7 +630,7 @@ class Ultrasound:
 
     def __init__(self, new_reading_available_event, 
                  get_last_ultrasound_readings, threashold_distance=20, 
-                 validation_count=2):
+                 validation_count=8):
         """ 
         :param new_reading_available_event: The event that indicates new 
             reading is available from class Arduino
@@ -636,6 +642,7 @@ class Ultrasound:
             of the sensor. """
 
         self._detection_threashold = threashold_distance
+        self._triggered_1 = np.array([0,0,0,0])
         self._validation_count = validation_count
         self._get_last_ultrasound_readings = get_last_ultrasound_readings
         self._new_reading_available_event = new_reading_available_event
@@ -653,13 +660,13 @@ class Ultrasound:
         self._start_read_distances_thread()
         
 
-    def __new__(cls, *args, **kwargs):
-        """ To prevent the Ultrasound instance from being created
-        multiple times. """
+    # def __new__(cls, *args, **kwargs):
+    #     """ To prevent the Ultrasound instance from being created
+    #     multiple times. """
 
-        if not cls._instance:
-            cls._instance = super(Ultrasound, cls).__new__(cls, *args, **kwargs)
-        return cls._instance
+    #     if not cls._instance:
+    #         cls._instance = super(Ultrasound, cls).__new__(cls, *args, **kwargs)
+    #     return cls._instance
 
 
     def __del__(self):
@@ -675,8 +682,10 @@ class Ultrasound:
         def read_distances():
             while not self._terminate_all_threads.is_set():
                 # Wait for a new reading to become available
-                self._new_reading_available_event.wait()
+                # print('waiting...')
+                time.sleep(0.1)
                 distances:np.ndarray = self._get_last_ultrasound_readings()
+                # print(f'distances{distances}')
                 i = 0
                 for distance in distances[:-1]: # [:-1] is to neglect the rugby detector
                     if distance <= self._detection_threashold:
@@ -690,6 +699,11 @@ class Ultrasound:
                     i += 1
                 # FIXME: Not sure if sensitive to float division errors
                 self._triggered = np.floor(self._detection_count / self._validation_count)
+                j = 0
+                
+                for value in self._triggered:
+                    self._triggered_1[j] = 0 if value == 0 else 1
+                    j += 1
         thread = threading.Thread(target=read_distances)
         self._threads.append(thread)
         thread.start()
@@ -736,7 +750,7 @@ class Ultrasound:
         
 
     def check_all_obstacles(self) -> np.ndarray:
-        return self._triggered
+        return self._triggered_1
 
 
 

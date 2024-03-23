@@ -70,8 +70,8 @@ def move(direction:str, duration=None,
             chassis.event_handler.check_reset()
             if chassis.event_handler.reset_flag:
                 break
-            print(direction) 
-            print(f'Obstacles at directions: {chassis._ultrasound.check_all_obstacles()}')
+            # print(direction) 
+            # print(f'Obstacles at directions: {chassis._ultrasound.check_all_obstacles()}')
             chassis.action(pid, yaw_start)
     else:
         start = time.time()
