@@ -16,6 +16,7 @@ bot.clear_auto_report_data()
 
 
 class EventHandler:
+    """ Class to set event flags to break out loops """
     def __init__(self, ser):
         self.ser = ser
         self.reset_flag = False
@@ -45,6 +46,7 @@ class EventHandler:
     
     
     def check_timeout(self):
+        """ Check if the program has been running longer than the specified duration (self.timeout_duration) """
         current_time = time.time()
         if current_time - self.iteration_start_time > self.timeout_duration:
             self.timeout_flag = True
@@ -53,13 +55,14 @@ class EventHandler:
 
 
     def empty_events(self):
+        """ Empty the event flags """
         self.reset_flag = False
         self.timeout_flag = False
 
 
 
 class Servo:
-    """ The class to represent the gripper's servo. """
+    """ Class to represent the gripper's servo. """
     
     def __init__(self, port):
         self._port = port
@@ -688,7 +691,7 @@ class Arduino:
 
 
 class Ultrasound:
-    """ Reads from Arduino and identifies obstacles """
+    """ Class that reads ultrasound sensors from Arduino and identifies obstacles """
 
     def __init__(self):
         # Cached accessible readings
@@ -701,6 +704,7 @@ class Ultrasound:
 
 
 class Chassis:
+    """ Class that defines the basic motion of chassis """
     def __init__(self, ultrasound:Arduino, lidar:Lidar, intake:Intake, event_handler:EventHandler, buzzer:Buzzer) -> None:
         self.vx = 0
         self.vy = 0
@@ -717,6 +721,9 @@ class Chassis:
         self.buzzer = buzzer
 
     def get_stopping_condition(self,direction):
+        """ Determines whether the robot should start.
+        :param direction: moving direction the robot
+        :return: boolean value depending on if there is an obstacle in the movin direction """
         if direction == 'f':
             return self.ultrasound.object_front
         elif direction == 'b':
@@ -729,6 +736,9 @@ class Chassis:
             return self.ultrasound.object_front
             
     def measure_stationary_yaw_drift_rate(self, duration, plot=False):
+        """ Measures the rate of drift in z-direction (yaw rate) 
+        :param duration: duration of measurement
+        :return: yaw_rate: the rate of drift in yaw """
         yaws=[]
         times=[]
         self.imu_init_angle_offset = bot.get_imu_attitude_data()[2]
@@ -759,6 +769,7 @@ class Chassis:
 
     # Not needed
     def get_imu_after_calibration(self, yaw_rate, duration, plot=False):
+        """ Testing function, not needed """
 
         yaws=[]
         times=[]
@@ -781,6 +792,8 @@ class Chassis:
             plt.savefig('plt_with_offset.png')
     
     def get_yaw_calibrated(self):
+        """ Calibrate yaw readings. 
+        :return: yaw: calibrated yaw """
         t = time.time()
         _, _, yaw = bot.get_imu_attitude_data()
         # print('Yaw Before Calibration: {}'.format(yaw))
@@ -789,7 +802,9 @@ class Chassis:
         return yaw
 
     def action(self, controller, yaw_start):
-        # self.event_handler.check_reset() ###
+        """ Set motion of robot with PID control. 
+        :param controller: a simple-pid PID controller, yaw_start: initial yaw angle """
+        self.event_handler.check_reset() ###
         yaw = self.get_yaw_calibrated()
         control = controller(yaw)
         error = yaw_start - yaw 
@@ -800,6 +815,7 @@ class Chassis:
         # time.sleep(0.05)
 
     def forward(self, duration = None):
+        """ Original function for moving forward. """
         print('Chassis Foward Checkpoint 1')
         yaw_start = self.get_yaw_calibrated()
         pid_forward = PID(0.5,0,0.1, setpoint=yaw_start)
@@ -831,6 +847,7 @@ class Chassis:
         self.stop()
                       
     def backward(self, duration = None):
+        """ Original function for moving backward. """
         yaw_start = self.get_yaw_calibrated()
         pid_backward = PID(0.5,0,0.1, setpoint=yaw_start)
         self.vx = -0.2
@@ -859,6 +876,7 @@ class Chassis:
         self.stop()
     
     def right(self, duration = None):
+        """ Original function for moving to the right. """
         yaw_start = self.get_yaw_calibrated()
         pid_right = PID(0.05, 0, 0.05, setpoint=yaw_start)
         self.vx = 0
@@ -881,6 +899,7 @@ class Chassis:
         self.stop()
         
     def left(self, duration = None):
+        """ Original function for moving to the left. """
         yaw_start = self.get_yaw_calibrated()
         pid_left = PID(0.2, -0.5, 0.01, setpoint=yaw_start)
         self.vx = 0
@@ -902,7 +921,8 @@ class Chassis:
                 self.action(pid_left, yaw_start)
         self.stop()
     
-    def turn(self, angle): # -ve for right, +ve for left
+    def turn(self, angle):
+        """ Original function for turning an angle. """
         yaw_start = self.get_yaw_calibrated()
         pid_turn = PID(0.07, 0, 0.03, setpoint = yaw_start + angle)
         self.vx = 0
@@ -937,11 +957,14 @@ class Chassis:
         self.stop()    
     
     def stop(self):
+        """ Stop robot motion """
         bot.set_car_motion(0, 0 ,0)
         self.intake.set_free_drive()
 
     # May not need
     def find_base(self):
+        """ Find base from current heading. 
+        :return: point: coordinate of base w.r.t robot """
         # Input: 4 sets of xy coordinates - points
         # Might have to make Lidar an attribute of Chassis Class, and call methods of Lidar
         points = self.lidar.get_last_arena_vertices()        
@@ -964,6 +987,7 @@ class Chassis:
         print('Base:', point)
     
     def revert_orientation(self):
+        """ Align the orientation of the robot for returning. """
         num = self.turn_num - 2
         print(num)
         if num%4 == 3:
