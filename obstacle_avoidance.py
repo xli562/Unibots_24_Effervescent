@@ -38,10 +38,10 @@ def check_restart():
 #     print("Distances:", distances)
 #     print("Obstacles at directions: {}".format(ultrasound.check_obstacle))
 
-ultrasound = Ultrasound(arduino_ser = ser)
+ultrasound = Arduino(arduino_ser = ser)
 lidar = Lidar()
 intake = Intake()
-event_handler = Event_Handler(ser = ser)
+event_handler = EventHandler(ser = ser)
 buzzer = Buzzer()
 
 

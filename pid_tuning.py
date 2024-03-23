@@ -1,4 +1,3 @@
-# from RosmasterBoard import Rosmaster
 from modules.Chassis import *
 import time
 import serial
@@ -12,8 +11,8 @@ import serial
 
 ser = serial.Serial("/dev/Arduino", 115200)
 
-ultrasound = Ultrasound(arduino_ser=ser)
-event_handler = Event_Handler(ser=ser)
+ultrasound = Arduino(arduino_ser=ser)
+event_handler = EventHandler(ser=ser)
 lidar = Lidar()
 intake = Intake()
 buzzer = Buzzer()

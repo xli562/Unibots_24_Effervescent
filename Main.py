@@ -1,4 +1,3 @@
-from modules.Event_Handler import Event_Handler
 from modules.Chassis import *
 import time
 import serial
@@ -12,10 +11,11 @@ do_stationary_test = True
 # bot.set_auto_report_state(enable = True)
 # bot.clear_auto_report_data()
 
-ultrasound = Ultrasound(arduino_ser = ser)
+arduino_board = Arduino()
+ultrasound = Ultrasound(arduino_board)
 lidar = Lidar()
 intake = Intake()
-event_handler = Event_Handler(ser = ser)
+event_handler = EventHandler(arduino_board)
 buzzer = Buzzer()
 chassis = Chassis(ultrasound, lidar, intake, event_handler, buzzer)
 chassis.stop()

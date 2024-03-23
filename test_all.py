@@ -1,14 +1,13 @@
-from modules.Event_Handler import Event_Handler
 from modules.Chassis import *
 import time
 import serial
 
 ser = serial.Serial("/dev/Arduino", 115200)
 
-ultrasound = Ultrasound(arduino_ser = ser)
+ultrasound = Arduino(arduino_ser = ser)
 lidar = Lidar()
 intake = Intake()
-event_handler = Event_Handler(ser = ser)
+event_handler = EventHandler(ser = ser)
 buzzer = Buzzer()
 
 

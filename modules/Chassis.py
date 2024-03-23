@@ -1,18 +1,11 @@
-print(2)
 from .RosmasterBoard import Rosmaster
-from .Event_Handler import Event_Handler
 
-
-import time, sys, subprocess, serial, threading, re
+import time, subprocess, serial, threading, re
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 from simple_pid import PID
 import numpy as np
 
-
-# global array to store motor velocity
-# N.B. Actual velocity of the wheel is this times a constant
-motor_velocity_array = [0,0,0,0]
 
 bot = Rosmaster()
 bot.create_receive_threading()
@@ -22,30 +15,47 @@ bot.set_auto_report_state(enable = True)
 bot.clear_auto_report_data()
 
 
-def exponential_moving_average(new_value, previous_ema, alpha=0.1):
-    return alpha * new_value + (1 - alpha) * previous_ema
+class EventHandler:
+    def __init__(self, ser):
+        self.ser = ser
+        self.reset_flag = False
+        self.timeout_flag = False
+        self.timeout_duration = 30
+        # Track the starting time of current main loop iteration. 
+        # When (current time - this) > timeout_duration, should start returning.
+        self.iteration_start_time = time.time()
+        
+    
+    def check_reset(self):
+        """ Check the Serial. If the message of "!Restart!" 
+        (sent from Arduino) is present, break from the main loop. """
+        
+        # print('restart_point_1')
+        try:
+            if self.ser.in_waiting > 0:
+                data_str = self.ser.readline().strip().decode('utf-8')
+                # print('Received Data: {}'.format(data_str))
+                readings = data_str.split('!')
+                for reading in readings:
+                    if reading == "Restart":  # Command to restart - sent when restart button of Arduino is pressed
+                        print('RESTARTING THE ROBOT')
+                        self.reset_flag = True
+        except Exception as e:
+            print(e)
+    
+    
+    def check_timeout(self):
+        current_time = time.time()
+        if current_time - self.iteration_start_time > self.timeout_duration:
+            self.timeout_flag = True
+            # break
+            # 目前还没有加入上面这行的break，后面可以考虑一下这里需不需要这个break
 
-# ser = serial.Serial("/dev/Arduino", 115200)
-# Rerun the current file
-# def ROBOT_RESET():
-#     print("Restarting...")
-#     python = '/home/eff/Desktop/Unibots_24_Effervescent/renv/bin/python3.10'
-#     subprocess.call([python, "test.py"])
-#     sys.exit()
 
-# def check_restart():
-#     print('restart_point_1')
-#     try:
-#         if ser.in_waiting > 0:
-#             data_str = ser.readline().strip().decode('utf-8')
-#             print('Received Data: {}'.format(data_str))
-#             readings = data_str.split('!')
-#             for reading in readings:
-#                 if reading == "Restart":  # Command to restart - sent when restart button of Arduino is pressed
-#                     print('RESTARTING THE ROBOT')
-#                     ROBOT_RESET()
-#     except Exception as e:
-#         print(e)
+    def empty_events(self):
+        self.reset_flag = False
+        self.timeout_flag = False
+
 
 
 class Servo:
@@ -59,29 +69,38 @@ class Servo:
         self._min_responsive_pos = 23
         self._max_responsive_pos = 160
     
+
     def set_position(self, degrees:int):
         """ Rotate the servo to specified angular position. 
         Position must be an integer, as specified by Rosmaster_Lib"""
+
         # Limit the input between min and max angles, beyond which the IDP servos will not move.
         degrees = max(self._min_responsive_pos, min(self._max_responsive_pos, degrees))
         bot.set_pwm_servo(1, degrees)
         self._position = degrees
 
+
     def get_position(self) -> int:
         return self._position
 
+
     def grip(self):
         """ Grip a mini rugby. """
+
         ''' TODO: Calibration '''
         self.set_position(self._grip_position)
 
+
     def release(self):
         """ Release a mini rugby. """
+
         ''' TODO: Calibration '''
         self.set_position(self._release_position)
 
+
     def test_run():
         """ Tests basic servo functions """
+
         servo = Servo(1)
         print(servo.get_position())
         while 1:
@@ -89,6 +108,7 @@ class Servo:
             time.sleep(1)
             servo.release()
             time.sleep(1)
+
 
 
 class Intake:
@@ -101,15 +121,18 @@ class Intake:
 
     def __init__(self, port=2):
         """ Initializes the intake motor on the given port. """
+
         self._port = port    # output port to arduino
         self._eat_power = 100   # intaking pwr, determines pwm ratio
         self._unload_power = 100
 
+
     def _set(self, power:int):
         """ Sets the intake motor's power.
-        power: will be truncated to a value between [0,100].
-               Intake is positive, unload is negative. 
-               Motor will not turn for abs(power) <~ 5, due to friction."""
+        :param power: will be truncated to a value between [0,100].
+            Intake is positive, unload is negative. 
+            Motor will not turn for abs(power) <~ 5, due to friction."""
+        
         # The segmented mapping function to 
         # map input[-100,100] to 'servo' angle [0,36]U{90}U[144,180]
         if power < -100:
@@ -125,39 +148,52 @@ class Intake:
         bot.set_pwm_servo(self._port, power)
         # print(f'Intake: port {self._port}, eqvl servo angle {power}')
 
+
     def set_eat_power(self, power:int):
         """ Sets the intaking power """
+
         self._eat_power = abs(power)
+
 
     def set_unload_power(self, power:int):
         """ Sets the unloading power """
+
         self._unload_power = abs(power)
+
 
     def eat(self, power:int=None):
         """ Intake the table tennis balls. 
-        power: optional, sets intaking power for the current action.
-        To change intaking power permanently, use set_eat_power() """
+        :param power: optional, sets intaking power for the current action.
+            To change intaking power permanently, use set_eat_power() """
+
         power = self._eat_power if power is None else abs(power)
         self._set(power)
 
+
     def unload(self, power:int=None):
         """ Unload the table tennis balls. 
-        power: optional, sets unloading power for the current action.
-        To change unloading power permanently, use set_unload_power() """
+        :param power: optional, sets unloading power for the current action.
+            To change unloading power permanently, use set_unload_power() """
+
         power = self._unload_power if power is None else abs(power)
         self._set(-power)
 
+
     def set_free_drive(self):
         """Sets the motor to free drive mode."""
+
         self._set(0)
+
 
     def test_run(self):
         """ Tests basic intaking functions """
+
         intake = Intake()
         intake.eat()
         intake.unload(50)
         time.sleep(2)
         intake.set_free_drive()
+
 
 
 class Buzzer:
@@ -186,6 +222,7 @@ class Buzzer:
                         time.sleep((beep_time * 2 + interval)*0.001)
                     elif char == ' ':
                         time.sleep((beep_time + interval)*0.001)
+
 
 
 class Lidar:
@@ -223,11 +260,7 @@ class Lidar:
         self._terminate_all_threads.set()
         for thread in self._threads:
             thread.join()
-        # try:
-        #     buzzer = Buzzer()
-        #     buzzer.beep_pattern('....  .. -')
-        # except:
-        #     pass
+        self._terminate_all_threads.clear()
 
 
     def _check_connection(self, timeout=5):
@@ -519,61 +552,73 @@ class Lidar:
         plt.show()
 
 
-class Ultrasound:
-    def __init__(self, arduino_ser):
-        self._ser = arduino_ser
-        self._sensors_count = 5
-        # Initialise the distances array
-        self.distances = [0] * self._sensors_count  # Right_Bottom, Left, Front, Back, Right_Top
-        # Initialise the 
-        self.updated_sensors = [False] * self._sensors_count
-        self.updated = False # 用来判断是否所有UltrasoundSensor都更新了最新读数
-        self.obstacle_trigger_count = [0] * self._sensors_count #代表了连续几次iteration检测到了obstacle，为了避免随机触发
-        self.rugby_trigger_count = 0 #同理，代表连续几次检测到了rugby
-        # 当不加入Threading，读取数据时会永远停留在receive_distances的while循环中。故需要加入Thread
-        # 先测试阶段，先不放入Thread
-        # 如果测试没问题，加入Thread不单单要uncomment下面两行，还需要添加别的代码（later）
-        # self.running = False
-        # self.receive_thread = None
 
-    def check_update_status(self):
-        for status in self.updated_sensors:
-            if status == False:
-                return False
-        return True
+class Arduino:
+    """ Class to represent the arduino. Reads ultrasound and reset_button datas. """
 
-    def receive_distances(self):
-        # TODO: investigate to minimise latency (use thread method similar to Lidar?)
-        self.updated = False
-        self.updated_sensors = [False] * self._sensors_count
-        while not(self.updated):
-            data_byte = self._ser.readline().strip()
-            try:
-                data_str = data_byte.decode('utf-8')
-                readings = data_str.split(',')
-                for reading in readings:
-                    if reading.startswith("U"):  # Ultrasonic sensor reading
-                        ultrasonic_distance = int(reading.split(':')[1])
-                        sensor_index = int(reading.split(':')[0][1])
-                        self.update_distance(ultrasonic_distance, sensor_index)
-                        self.updated_sensors[sensor_index] = True
+    _instance = None    # Needed for the __new__() method
 
-                        if(self.check_update_status()):
-                            self.updated = True
+    def __init__(self):
+        # Serial port
+        self._ser = serial.Serial("/dev/Arduino", 115200)
+        # Cached accessible readings
+        self._last_ultrasound_readings = None
+        self._flag_received_reset = False
+        # Threads management
+        self._threads = []
+        self._terminate_all_threads = threading.Event()
+        self._terminate_all_threads.clear()
+        self._start_scan_serial_thread()
+        
 
-                    # if 'Restart' in readings:
-                    #     ROBOT_RESET()
+    def __new__(cls, *args, **kwargs):
+        """ To prevent the Lidar instance from being created
+        multiple times. """
 
-                # Update Rugby连续几次iteration被检测到了            
-                if (self.distances[4] - self.distances[0]) >= 10:
-                    self.rugby_trigger_count += 1
-                else:
-                    self.rugby_trigger_count = 0
-            except Exception as e:
-                print(e)
+        if not cls._instance:
+            cls._instance = super(Arduino, cls).__new__(cls, *args, **kwargs)
+        return cls._instance
+
+
+    def __del__(self):
+        self._terminate_all_threads.set()
+        for thread in self._threads:
+            thread.join()
+        self._terminate_all_threads.clear()
+
+
+    def test_arduino_receive(self):
+        """ Tests the arduino class by 
+        printing out data received from the arduino. """
+        pass
+
+
+    def _start_scan_serial_thread(self):
+        """ Creates thread to scan Arduino's serial input """
+
+        def listen_serial():
+            while not self._terminate_all_threads.is_set():
+                raw_line = self._ser.readline().strip()
+                try:
+                    line = raw_line.decode('utf-8')
+                    if line.startswith("U"):
+                        # Recieved ultrasonic reading
+                        readings = line.split(',')
+                        for reading in readings:
+                            splitted_readings = reading.split(':')
+                            ultrasonic_distance = int(splitted_readings[1])
+                            sensor_index = int(splitted_readings[0][1])
+                            print(splitted_readings)
+                    elif line.startswith("R"):
+                        self._flag_received_reset = True
+                except Exception as e:
+                    print(e)
+        thread = threading.Thread(target=listen_serial)
+        self._threads.append(thread)
+        thread.start()
 
     def update_distance(self, distance, sensor_index):
-        self.distances[sensor_index] = distance
+        self._distances[sensor_index] = distance
         if (distance < 30 and distance > 0):
             self.obstacle_trigger_count[sensor_index] += 1
         else:
@@ -581,9 +626,18 @@ class Ultrasound:
 
     def get_distances(self):
         if (self.updated):
-            return self.distances
+            return self._distances
         else:
             self.receive_distances()
+
+    def detect_rugby(self):
+        # TODO: under construction
+        # Update Rugby连续几次iteration被检测到了            
+        if (self._distances[4] - self._distances[0]) >= 10:
+            self.rugby_trigger_count += 1
+        else:
+            self.rugby_trigger_count = 0
+
 
     @property
     def rugby_right(self):
@@ -620,32 +674,27 @@ class Ultrasound:
     def check_obstacle(self):
         obstacle = []
         for i in range(1,5):
-            if self.distances[i] < 20 and self.distances[i] > 0:
+            if self._distances[i] < 20 and self._distances[i] > 0:
                 obstacle.append(i)
         return obstacle
 
-    def comments():
-        # ultrasound = Ultrasound()
-        # while True:
-        #     ultrasound.receive_distances()
-        #     distances = ultrasound.get_distances()  
-        #     print("Distances:", distances)
-        #     print("Obstacles at directions: {}".format(ultrasound.check_obstacle))
-        #     time.sleep(0.1)  
 
-        # # Example usage:
-        # if __name__ == "__main__":
-        #     ultrasound = Ultrasound()  # Create an Ultrasound object
-        #     while True:
-        #         distances = ultrasound.receive_distances()
-        #         distances = ultrasound.get_distances()  
-        #         print("Distances:", distances)
-        #         time.sleep(0.1)  
-        pass
+
+class Ultrasound:
+    """ Reads from Arduino and identifies obstacles """
+
+    def __init__(self):
+        # Cached accessible readings
+        # Right_Bottom, Left, Front, Back, Right_Top
+        self._distances = np.array([0., 0., 0., 0., 0.])
+        # Robust triggering
+        self.obstacle_trigger_count = [0] * 5 #代表了连续几次iteration检测到了obstacle，为了避免随机触发
+        self.rugby_trigger_count = 0 #同理，代表连续几次检测到了rugby
+
 
 
 class Chassis:
-    def __init__(self, ultrasound:Ultrasound, lidar:Lidar, intake:Intake, event_handler:Event_Handler, buzzer:Buzzer) -> None:
+    def __init__(self, ultrasound:Arduino, lidar:Lidar, intake:Intake, event_handler:EventHandler, buzzer:Buzzer) -> None:
         self.vx = 0
         self.vy = 0
         self.vz = 0
@@ -923,7 +972,4 @@ class Chassis:
 
 
 
-
-
 pass
-print(1)
