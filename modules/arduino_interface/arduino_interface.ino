@@ -5,8 +5,8 @@
 */
 
 //----------Intake----------
-#define positivePin 14 // 14 represents A0 analogue pin
-#define negativePin 13
+#define positivePin 11 // 14 represents A0 analogue pin
+#define negativePin 12
 
 volatile unsigned long pulseHighTime = 0;
 volatile unsigned long pulseLowTime = 0;
@@ -26,8 +26,8 @@ int power = 0;
 
 // int trigPins[NUM_ULTRASOUND] = {6,2,8,4,10};  //Right_Bottom, Left, Front, Back, Right_Top
 // int echoPins[NUM_ULTRASOUND] = {7,3,9,5,11}; 
-int trigPins[NUM_ULTRASOUND] = {8, 6, 12, 4, 10};  // Front, back, left, right_bottom, right_top
-int echoPins[NUM_ULTRASOUND] = {9, 7, 3, 5, 11};
+int trigPins[NUM_ULTRASOUND] = {8, 6, 13, 4, 10};  // Front, back, left, right_bottom, right_top
+int echoPins[NUM_ULTRASOUND] = {9, 7, 3, 5, 10};
 
 NewPing ultrasound_sensors[NUM_ULTRASOUND]{
   NewPing(trigPins[0], echoPins[0], MAX_DISTANCE),

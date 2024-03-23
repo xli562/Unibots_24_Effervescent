@@ -607,7 +607,7 @@ class Arduino:
                         self._last_ultrasound_readings = np.array([int(reading) for reading in readings_str])
                         self.ultrasound_new_reading_available.set()
                     elif line.startswith("R"):
-                        self.received_reset = True
+                        self.received_reset.set()
                 except Exception as e:
                     print(f'Exception while listening serial from Arduino: \n{e}')
         thread = threading.Thread(target=listen_serial)
@@ -630,7 +630,7 @@ class Ultrasound:
 
     def __init__(self, new_reading_available_event, 
                  get_last_ultrasound_readings, threashold_distance=20, 
-                 validation_count=8):
+                 validation_count=5):
         """ 
         :param new_reading_available_event: The event that indicates new 
             reading is available from class Arduino
@@ -740,11 +740,11 @@ class Ultrasound:
         if direction == 'f':
             return self._triggered[0]
         elif direction == 'b':
-            return self._triggered[3]
+            return self._triggered[1]
         elif direction == 'r':
             return self._triggered[3]
         elif direction == 'l':
-            return self._triggered[3]
+            return self._triggered[2]
         else:
             return self._triggered[0]
         
@@ -799,6 +799,7 @@ class EventHandler:
 
         self.reset_flag = False
         self.timeout_flag = False
+        self._received_reset.clear()
 
 
 

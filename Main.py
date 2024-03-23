@@ -4,7 +4,7 @@ import serial
 
 # If we are testing the robot stationary,
 # shorten the wait times for yaw calibration.
-do_stationary_test = True
+do_stationary_test = False
 
 
 buzzer = Buzzer()
@@ -24,12 +24,12 @@ if do_stationary_test:
     print('Program Start without sleep')
 else:
     print('Program Start with a sleep of 15 seconds')
-    time.sleep(2)
+    time.sleep(3)
 bot.set_beep(100)
 
 
 print("Start Measure")
-imu_calibration_time = 3 if do_stationary_test else 20
+imu_calibration_time = 5 if do_stationary_test else 20
 yaw_rate = chassis.measure_stationary_yaw_drift_rate(imu_calibration_time)
 bot.set_beep(100)
 chassis.imu_init_angle_offset = chassis.get_yaw_calibrated()
@@ -66,9 +66,13 @@ def move(direction:str, duration=None,
         raise Exception(f'Direction has to be "f", "b", "l" or "r", got {direction}.')
 
     if duration is None:
-        while not check_obstacle(direction) and not(chassis.event_handler.reset_flag): ####(Max)#### Added the chassis.event_handler.reset_flag
+        while not check_obstacle(direction) and not(chassis.event_handler.reset_flag) and not(chassis.event_handler.timeout_flag): ####(Max)#### Added the chassis.event_handler.reset_flag
+            # print(ultrasound.check_all_obstacles())
             chassis.event_handler.check_reset()
+            chassis.event_handler.check_timeout()
             if chassis.event_handler.reset_flag:
+                break
+            if chassis.event_handler.timeout_flag:
                 break
             # print(direction) 
             # print(f'Obstacles at directions: {chassis._ultrasound.check_all_obstacles()}')
@@ -76,7 +80,7 @@ def move(direction:str, duration=None,
     else:
         start = time.time()
         end = time.time()
-        while (end - start < duration) and not(check_obstacle(direction)) and not(chassis.event_handler.reset_flag):  ####(Max)#### Added the chassis.event_handler.reset_flag
+        while (end - start < duration) and not(check_obstacle(direction)) and not(chassis.event_handler.reset_flag) and not(chassis.event_handler.timeout_flag):  ####(Max)#### Added the chassis.event_handler.reset_flag
             end = time.time()
             chassis.action(pid, yaw_start)
 
@@ -153,6 +157,8 @@ while True:
         time.sleep(5)
         #chassis.revert_orientation()
     
+    if (chassis.event_handler.reset_flag):
+        time.sleep(10)
 
         
     # # return loop
