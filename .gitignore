@@ -3,3 +3,4 @@ renv/
 lidar_sdk/build
 .vscode/
 .idea/
+.DS_Store*
