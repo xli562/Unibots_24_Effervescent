@@ -607,7 +607,6 @@ class Arduino:
                         for reading in readings:
                             splitted_readings = reading.split(':')
                             ultrasonic_distance = int(splitted_readings[1])
-                            sensor_index = int(splitted_readings[0][1])
                             print(splitted_readings)
                     elif line.startswith("R"):
                         self._flag_received_reset = True

@@ -62,8 +62,6 @@ void loop() {
   
     // Send data over serial with identifiers
     Serial.print("U"); // Identifier for ultrasonic sensor
-    Serial.print(i); // Add index of the sensor for identification
-    Serial.print(":");
     Serial.print(ultrasonic_distance);
     Serial.print(",");
   }
