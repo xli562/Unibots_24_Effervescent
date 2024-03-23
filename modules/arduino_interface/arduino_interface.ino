@@ -42,6 +42,7 @@ void setup() {
   //----------Ultrasound----------
   Serial.begin(115200); // Initialize serial communication.
 
+  Serial.println("");
   Serial.println("R");
 
   //----------Intake----------
