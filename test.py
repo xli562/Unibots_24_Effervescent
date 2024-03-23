@@ -4,7 +4,7 @@ import serial
 
 # If we are testing the robot stationary,
 # shorten the wait times for yaw calibration.
-do_stationary_test = False
+do_stationary_test = True
 
 
 buzzer = Buzzer()
@@ -22,9 +22,10 @@ chassis.stop()
 print('START')
 if do_stationary_test:
     print('Program Start without sleep')
+    time.sleep(3)
 else:
     print('Program Start with a sleep of 15 seconds')
-    time.sleep(3)
+    time.sleep(15)
 bot.set_beep(100)
 
 
@@ -44,22 +45,22 @@ def move(direction:str, duration=None,
     yaw_start = chassis.get_yaw_calibrated()
     if direction == 'f':
         # yaw_start = chassis.get_yaw_calibrated()
-        pid = PID(0.5,0,0.1, setpoint=yaw_start)
+        pid = PID(0, 0, 0, setpoint=yaw_start) # 0.5, 0, 0.1
         chassis.vx = 0.2
         chassis.vy = 0
     elif direction == 'b':
         # yaw_start = chassis.get_yaw_calibrated()
-        pid = PID(0.5,0,0.1, setpoint=yaw_start)
+        pid = PID(0, 0, 0, setpoint=yaw_start)
         chassis.vx = -0.2
         chassis.vy = 0
     elif direction == 'l':
         # yaw_start = chassis.get_yaw_calibrated()
-        pid = PID(0.2, -0.5, 0.01, setpoint=yaw_start)
+        pid = PID(0, 0, 0, setpoint=yaw_start)
         chassis.vx = 0
         chassis.vy = -0.2
     elif direction == 'r':
         # yaw_start = chassis.get_yaw_calibrated()
-        pid = PID(0.05, 0, 0.05, setpoint=yaw_start)
+        pid = PID(0, 0, 0, setpoint=yaw_start) # 0.05, 0, 0.05
         chassis.vx = 0
         chassis.vy = 0.2
     else:
@@ -132,12 +133,16 @@ def turn(angle): # -ve for clockwise, +ve for anticlockwise
 
 # Main Loop
 move("f",10)
-move("b",10)
-move("l",10)
-move("r",10)
-turn(90)
-turn(-90)
-time.sleep(5)
+# time.sleep(0.2)
+# move("b",10)
+# time.sleep(0.2)
+# move("l",10)
+# time.sleep(0.2)
+# move("r",10)
+# time.sleep(0.2)
+# turn(90)
+# time.sleep(0.2)
+# turn(-90)
 
        
 
