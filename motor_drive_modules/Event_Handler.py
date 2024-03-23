@@ -18,11 +18,11 @@ class Event_Handler():
         """
         Check the Serial. If the message of "!Restart!" (sent from Arduino) is present, break from the main loop.
         """
-        print('restart_point_1')
+        # print('restart_point_1')
         try:
             if self.ser.in_waiting > 0:
                 data_str = self.ser.readline().strip().decode('utf-8')
-                print('Received Data: {}'.format(data_str))
+                # print('Received Data: {}'.format(data_str))
                 readings = data_str.split('!')
                 for reading in readings:
                     if reading == "Restart":  # Command to restart - sent when restart button of Arduino is pressed
@@ -41,6 +41,7 @@ class Event_Handler():
 
     def empty_events(self):
         self.reset_flag = False
+        self.timeout_flag = False
 
 
 # event_handler = Event_Handler()

@@ -16,22 +16,18 @@ lidar = Lidar()
 intake = Intake()
 event_handler = Event_Handler(ser = ser)
 buzzer = Buzzer()
+chassis = Chassis(ultrasound, lidar, intake, event_handler, buzzer)
 
 
 print('START')
 print('Program Start with a sleep of 15 seconds')
-chassis = Chassis(ultrasound, lidar, intake, event_handler, buzzer)
 chassis.stop()
-# bot.set_car_motion(0,0,0)
-# intake.set_free_drive()
-
 time.sleep(2)
 bot.set_beep(100)
-# chassis = Chassis(ultrasound, lidar, intake, event_handler, buzzer)
 
 
 print("Start Measure")
-yaw_rate = chassis.measure_stationary_yaw_drift_rate(15)
+yaw_rate = chassis.measure_stationary_yaw_drift_rate(5)
 bot.set_beep(100)
 print("Yaw Rate: {}".format(yaw_rate))
 print('IMU gloabl start: {}'.format(chassis.imu_global_start))
@@ -63,8 +59,12 @@ def move(direction, duration = None, getter = chassis.get_stopping_condition): #
     if duration is None:
         while not(getter(direction)):
             chassis.ultrasound.receive_distances()
-            distances = chassis.ultrasound.get_distances()  
-            print("Distances:", distances)
+            distances = chassis.ultrasound.get_distances()
+            chassis.event_handler.check_restart()
+            if chassis.event_handler.reset_flag:
+                break
+            print(direction)  
+            # print("Distances:", distances)
             print("Obstacles at directions: {}".format(chassis.ultrasound.check_obstacle))
             chassis.action(pid, yaw_start)
     else:
@@ -74,8 +74,8 @@ def move(direction, duration = None, getter = chassis.get_stopping_condition): #
             end = time.time()
             chassis.ultrasound.receive_distances()
             distances = chassis.ultrasound.get_distances()  
-            print("Distances:", distances)
-            print("Obstacles at directions: {}".format(chassis.ultrasound.check_obstacle))
+            # print("Distances:", distances)
+            # print("Obstacles at directions: {}".format(chassis.ultrasound.check_obstacle))
             chassis.action(pid, yaw_start)
 
     chassis.stop()
@@ -116,7 +116,6 @@ def turn(angle): # -ve for right, +ve for left
     chassis.stop()    
 
 
-
 # Main Loop
 while True:
     chassis.event_handler.empty_events()
@@ -126,30 +125,39 @@ while True:
     if not(chassis.event_handler.timeout_flag):
         move('r', duration = 5) # 2 seconds move right
 
-    # Going out, Searching & Grabbing
+    # Going out, Searching & Grabbing, stop when timeout
     while not(chassis.event_handler.timeout_flag):
         # Chassis.forward()
         move('f')
-
         if chassis.event_handler.reset_flag or chassis.event_handler.timeout_flag:
+            chassis.stop()
             break
-        time.sleep(0.5)
 
         # Chassis.right()
         move('r')
         if chassis.event_handler.reset_flag or chassis.event_handler.timeout_flag:
+            chassis.stop()
             break
+        chassis.event_handler.check_timeout()
 
-    if chassis.event_handler.timeout_flag:
-        # Turn to correct orientation for return-to-base to begin
-        chassis.revert_orientation()
+    # Turn to correct orientation for return-to-base to begin
+    print('Returning to scoring area')
+    buzzer.beep_pattern('...')
+    time.sleep(5)
+    #chassis.revert_orientation()
         
         
     # # return loop
-    # while (abs(chassis.find_base[0] > 45)) or (abs(chassis.find_base[1]) > 45):
-    #     if chassis.find_base[0] > 45:
-    #         chassis.forward()
-    #     if chassis.find_base[1] > 45:
-    #         chassis.right()
+    # x_base = 100
+    # y_base = 100
+    # while x_base > 45 or y_base > 45:
+    #     if y_base > 45:
+    #         move('f')
+    #         base = chassis.find_base()
+    #         x_base, y_base = base[0], base[1]
+    #     if x_base > 45:
+    #         move('r')
+    #         base = chassis.find_base()
+    #         x_base, y_base = base[0], base[1]
        
 

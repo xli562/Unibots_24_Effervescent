@@ -123,7 +123,7 @@ class Intake:
         else:
             power = 180
         bot.set_pwm_servo(self._port, power)
-        print(f'Intake: port {self._port}, eqvl servo angle {power}')
+        # print(f'Intake: port {self._port}, eqvl servo angle {power}')
 
     def set_eat_power(self, power:int):
         """ Sets the intaking power """
@@ -735,10 +735,10 @@ class Chassis:
         control = controller(yaw)
         error = yaw_start - yaw 
         self.vz = max(-10, min(control, 10))
-        print("Error: {}, Control: {}, Vz: {}".format(error, control, self.vz))
+        # print("Error: {}, Control: {}, Vz: {}".format(error, control, self.vz))
         bot.set_car_motion(self.vx, self.vy, self.vz)
         self.intake.eat()
-        time.sleep(0.05)
+        # time.sleep(0.05)
 
     def forward(self, duration = None):
         print('Chassis Foward Checkpoint 1')
@@ -752,7 +752,7 @@ class Chassis:
                     self.ultrasound.receive_distances()
                     distances = self.ultrasound.get_distances()  
                     print("Distances:", distances)
-                    print("Obstacles at directions: {}".format(self.ultrasound.check_obstacle))
+                    # print("Obstacles at directions: {}".format(self.ultrasound.check_obstacle))
 
                     self.action(pid_forward, yaw_start)
 
@@ -886,22 +886,23 @@ class Chassis:
         # Input: 4 sets of xy coordinates - points
         # Might have to make Lidar an attribute of Chassis Class, and call methods of Lidar
         points = self.lidar.get_last_arena_vertices()        
-        if self.turn % 4 == 0: # Base in Quadrant 3
+        if self.turn_num % 4 == 0: # Base in Quadrant 3
             for point in points:
                 if point[0] < 0 and point[1] < 0:
                     return point
-        elif self.turn % 4 == 1: # Base in Quadrant 2
+        elif self.turn_num % 4 == 1: # Base in Quadrant 2
             for point in points:
                 if point[0] < 0 and point[1] > 0:
                     return point
-        elif self.turn % 4 == 2: # Base in Quadrant 1
+        elif self.turn_num % 4 == 2: # Base in Quadrant 1
             for point in points:
                 if point[0] > 0 and point[1] > 0:
                     return point
-        elif self.turn % 4 == 3:
+        elif self.turn_num % 4 == 3:
             for point in points: # Base in Quadrant 4
                 if point[0] > 0 and point[1] < 0:
                     return point
+        print('Base:', point)
     
     def revert_orientation(self):
         num = self.turn_num - 2
