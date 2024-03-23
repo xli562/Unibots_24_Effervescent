@@ -1,9 +1,10 @@
-from motor_drive_modules.Event_Handler import Event_Handler
-from motor_drive_modules.Chassis import *
+from modules.Event_Handler import Event_Handler
+from modules.Chassis import *
 import time
 import serial
 
 ser = serial.Serial("/dev/Arduino", 115200)
+do_stationary_test = True
 
 # Setup
 # bot = Rosmaster()
@@ -11,28 +12,32 @@ ser = serial.Serial("/dev/Arduino", 115200)
 # bot.set_auto_report_state(enable = True)
 # bot.clear_auto_report_data()
 
-ultrasound = Ultrasound(ser = ser)
+ultrasound = Ultrasound(arduino_ser = ser)
 lidar = Lidar()
 intake = Intake()
 event_handler = Event_Handler(ser = ser)
 buzzer = Buzzer()
 chassis = Chassis(ultrasound, lidar, intake, event_handler, buzzer)
+chassis.stop()
 
 
 print('START')
-print('Program Start with a sleep of 15 seconds')
-chassis.stop()
-time.sleep(2)
+if do_stationary_test:
+    print('Program Start without a sleep of 15 seconds')
+else:
+    print('Program Start with a sleep of 15 seconds')
+    time.sleep(2)
 bot.set_beep(100)
 
 
 print("Start Measure")
-yaw_rate = chassis.measure_stationary_yaw_drift_rate(5)
+imu_calibration_time = 3 if do_stationary_test else 20
+yaw_rate = chassis.measure_stationary_yaw_drift_rate(imu_calibration_time)
 bot.set_beep(100)
-print("Yaw Rate: {}".format(yaw_rate))
-print('IMU gloabl start: {}'.format(chassis.imu_global_start))
+print(f'Yaw Rate: {yaw_rate}')
+print(f'IMU gloabl start: {chassis.imu_init_angle_offset}')
 
-def move(direction, duration = None, getter = chassis.get_stopping_condition): # getter represents the getter function to retrieve stoping condition from ultrasound
+def move(direction, duration=None, getter=chassis.get_stopping_condition): # getter represents the getter function to retrieve stoping condition from ultrasound
     yaw_start = chassis.get_yaw_calibrated()
     if direction == 'f':
         # yaw_start = chassis.get_yaw_calibrated()
@@ -54,18 +59,17 @@ def move(direction, duration = None, getter = chassis.get_stopping_condition): #
         pid = PID(0.05, 0, 0.05, setpoint=yaw_start)
         chassis.vx = 0
         chassis.vy = 0.2
-
+    else:
+        raise Exception(f'Direction has to be "f", "b", "l" or "r", got {direction}.')
 
     if duration is None:
-        while not(getter(direction)):
+        while not getter(direction):
             chassis.ultrasound.receive_distances()
-            distances = chassis.ultrasound.get_distances()
-            chassis.event_handler.check_restart()
+            chassis.event_handler.check_reset()
             if chassis.event_handler.reset_flag:
                 break
-            print(direction)  
-            # print("Distances:", distances)
-            print("Obstacles at directions: {}".format(chassis.ultrasound.check_obstacle))
+            print(direction) 
+            print(f'Obstacles at directions: {chassis.ultrasound.check_obstacle}')
             chassis.action(pid, yaw_start)
     else:
         start = time.time()
@@ -73,15 +77,12 @@ def move(direction, duration = None, getter = chassis.get_stopping_condition): #
         while (end - start < duration) and not(getter(direction)):
             end = time.time()
             chassis.ultrasound.receive_distances()
-            distances = chassis.ultrasound.get_distances()  
-            # print("Distances:", distances)
-            # print("Obstacles at directions: {}".format(chassis.ultrasound.check_obstacle))
             chassis.action(pid, yaw_start)
 
     chassis.stop()
     
 
-def turn(angle): # -ve for right, +ve for left
+def turn(angle): # -ve for clockwise, +ve for anticlockwise
     yaw_start = chassis.get_yaw_calibrated()
     pid_turn = PID(0.07, 0, 0.03, setpoint = yaw_start + angle)
     chassis.vx = 0
@@ -99,13 +100,14 @@ def turn(angle): # -ve for right, +ve for left
             error = yaw_start + angle - yaw 
             control = pid_turn(yaw)
             chassis.vz = max(-10, min(control, 10))
-            print("Error: {}, Control: {}, Vz: {}".format(error, control, chassis.vz))
+            print(f'Error: {error}, Control: {control}, Vz: {chassis}')
             bot.set_car_motion(chassis.vx, chassis.vy, chassis.vz)
             chassis.intake.set_eat_power()
             time.sleep(0.1)
         except KeyboardInterrupt:
             chassis.stop()
             break
+
 
     ######
     if (angle < 0): #Assuming turns can only be +90 or -90
@@ -122,18 +124,18 @@ while True:
     chassis.event_handler.iteration_start_time = time.time()
 
     # Moving right a little bit to start with
-    if not(chassis.event_handler.timeout_flag):
+    if not chassis.event_handler.timeout_flag:
         move('r', duration = 5) # 2 seconds move right
 
-    # Going out, Searching & Grabbing, stop when timeout
-    while not(chassis.event_handler.timeout_flag):
-        # Chassis.forward()
+    # Going out, searching & grabbing, stop when timeout
+    while not chassis.event_handler.timeout_flag:
+        # Move forward
         move('f')
         if chassis.event_handler.reset_flag or chassis.event_handler.timeout_flag:
             chassis.stop()
             break
 
-        # Chassis.right()
+        # Move to the right
         move('r')
         if chassis.event_handler.reset_flag or chassis.event_handler.timeout_flag:
             chassis.stop()

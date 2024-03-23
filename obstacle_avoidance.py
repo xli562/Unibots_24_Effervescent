@@ -1,4 +1,4 @@
-from motor_drive_modules.Chassis import *
+from modules.Chassis import *
 import time
 import serial
 import subprocess
@@ -38,7 +38,7 @@ def check_restart():
 #     print("Distances:", distances)
 #     print("Obstacles at directions: {}".format(ultrasound.check_obstacle))
 
-ultrasound = Ultrasound(ser = ser)
+ultrasound = Ultrasound(arduino_ser = ser)
 lidar = Lidar()
 intake = Intake()
 event_handler = Event_Handler(ser = ser)
@@ -57,7 +57,7 @@ print("Start Measure")
 yaw_rate = chassis.measure_stationary_yaw_drift_rate(5)
 bot.set_beep(100)
 print("Yaw Rate: {}".format(yaw_rate))
-print('IMU gloabl start: {}'.format(chassis.imu_global_start))
+print('IMU gloabl start: {}'.format(chassis.imu_init_angle_offset))
 
 # while True:
     #check_restart()

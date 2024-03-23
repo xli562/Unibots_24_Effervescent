@@ -519,15 +519,17 @@ class Lidar:
         plt.show()
 
 
-NUM_OF_ULTRASOUND_SENSOR = 5
 class Ultrasound:
-    def __init__(self, ser):
-        self.ser = ser
-        self.distances = [0] * NUM_OF_ULTRASOUND_SENSOR  # Right_Bottom, Left, Front, Back, Right_Top
-        self.updated_sensors = [False]*NUM_OF_ULTRASOUND_SENSOR
+    def __init__(self, arduino_ser):
+        self._ser = arduino_ser
+        self._sensors_count = 5
+        # Initialise the distances array
+        self.distances = [0] * self._sensors_count  # Right_Bottom, Left, Front, Back, Right_Top
+        # Initialise the 
+        self.updated_sensors = [False] * self._sensors_count
         self.updated = False # 用来判断是否所有UltrasoundSensor都更新了最新读数
-        self.obstacle_count = [0] * NUM_OF_ULTRASOUND_SENSOR #代表了连续几次iteration检测到了obstacle，为了避免随机触发
-        self.rugby_count = 0 #同理，代表连续几次检测到了rugby
+        self.obstacle_trigger_count = [0] * self._sensors_count #代表了连续几次iteration检测到了obstacle，为了避免随机触发
+        self.rugby_trigger_count = 0 #同理，代表连续几次检测到了rugby
         # 当不加入Threading，读取数据时会永远停留在receive_distances的while循环中。故需要加入Thread
         # 先测试阶段，先不放入Thread
         # 如果测试没问题，加入Thread不单单要uncomment下面两行，还需要添加别的代码（later）
@@ -541,10 +543,11 @@ class Ultrasound:
         return True
 
     def receive_distances(self):
+        # TODO: investigate to minimise latency (use thread method similar to Lidar?)
         self.updated = False
-        self.updated_sensors = [False] * NUM_OF_ULTRASOUND_SENSOR
+        self.updated_sensors = [False] * self._sensors_count
         while not(self.updated):
-            data_byte = self.ser.readline().strip()
+            data_byte = self._ser.readline().strip()
             try:
                 data_str = data_byte.decode('utf-8')
                 readings = data_str.split(',')
@@ -563,18 +566,18 @@ class Ultrasound:
 
                 # Update Rugby连续几次iteration被检测到了            
                 if (self.distances[4] - self.distances[0]) >= 10:
-                    self.rugby_count += 1
+                    self.rugby_trigger_count += 1
                 else:
-                    self.rugby_count = 0
+                    self.rugby_trigger_count = 0
             except Exception as e:
                 print(e)
 
     def update_distance(self, distance, sensor_index):
         self.distances[sensor_index] = distance
         if (distance < 30 and distance > 0):
-            self.obstacle_count[sensor_index] += 1
+            self.obstacle_trigger_count[sensor_index] += 1
         else:
-            self.obstacle_count[sensor_index] = 0
+            self.obstacle_trigger_count[sensor_index] = 0
 
     def get_distances(self):
         if (self.updated):
@@ -585,31 +588,31 @@ class Ultrasound:
     @property
     def rugby_right(self):
         if (self.updated):
-            return (self.rugby_count >= 5)
+            return (self.rugby_trigger_count >= 5)
             # return (self.distances[4] - self.distances[0]) >= 5
             # rugby_left is True when the difference between top and bottom sensor > 5cm
 
     @property
     def object_left(self):
-        return (self.obstacle_count[1] >= 2)
+        return (self.obstacle_trigger_count[1] >= 2)
         # return (self.distances[4] < 10 and self.distances[4] > 0)
         # when object detected within 10cm, object detected
 
     @property
     def object_right(self):
-        return (self.obstacle_count[4] >= 2)
+        return (self.obstacle_trigger_count[4] >= 2)
         # return (self.distances[1] < 10 and self.distances[1] > 0)
         # when object detected within 10cm, object detected
     
     @property
     def object_front(self):
-        return (self.obstacle_count[2] >= 1)
+        return (self.obstacle_trigger_count[2] >= 1)
         # return (self.distances[2] < 10 and self.distances[2] > 0)
         # when object detected within 10cm, object detected
     
     @property
     def object_back(self):
-        return (self.obstacle_count[3] >= 1)
+        return (self.obstacle_trigger_count[3] >= 1)
         # return (self.distances[3] < 10 and self.distances[3] > 0)
         # when object detected within 10cm, object detected
 
@@ -649,7 +652,7 @@ class Chassis:
         self.yaw_tolerance = 1
         self.yaw_rate = 0
         self.time_global_start = time.time()
-        self.imu_global_start = bot.get_imu_attitude_data()[2]
+        self.imu_init_angle_offset = bot.get_imu_attitude_data()[2]
         self.turn_num = 0
         self.intake = intake
         self.ultrasound = ultrasound
@@ -672,7 +675,7 @@ class Chassis:
     def measure_stationary_yaw_drift_rate(self, duration, plot=False):
         yaws=[]
         times=[]
-        self.imu_global_start = bot.get_imu_attitude_data()[2]
+        self.imu_init_angle_offset = bot.get_imu_attitude_data()[2]
 
         start = time.time()
         roll, pitch, yaw = bot.get_imu_attitude_data()
@@ -730,7 +733,7 @@ class Chassis:
         return yaw
 
     def action(self, controller, yaw_start):
-        self.event_handler.check_restart() ###
+        self.event_handler.check_reset() ###
         yaw = self.get_yaw_calibrated()
         control = controller(yaw)
         error = yaw_start - yaw 

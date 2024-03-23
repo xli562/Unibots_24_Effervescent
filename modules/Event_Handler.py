@@ -11,13 +11,15 @@ class Event_Handler():
         self.reset_flag = False
         self.timeout_flag = False
         self.timeout_duration = 30
-        self.iteration_start_time = time.time() #this tracks the starting time of current main loop iteration. When this > timeout_duration, should start returning.
+        # Track the starting time of current main loop iteration. 
+        # When (current time - this) > timeout_duration, should start returning.
+        self.iteration_start_time = time.time()
         
     
-    def check_restart(self):
-        """
-        Check the Serial. If the message of "!Restart!" (sent from Arduino) is present, break from the main loop.
-        """
+    def check_reset(self):
+        """ Check the Serial. If the message of "!Restart!" 
+        (sent from Arduino) is present, break from the main loop. """
+        
         # print('restart_point_1')
         try:
             if self.ser.in_waiting > 0:
@@ -28,9 +30,10 @@ class Event_Handler():
                     if reading == "Restart":  # Command to restart - sent when restart button of Arduino is pressed
                         print('RESTARTING THE ROBOT')
                         self.reset_flag = True
-                        break # CHECK IF NEED THIS
         except Exception as e:
             print(e)
+    
+    
     def check_timeout(self):
         current_time = time.time()
         if current_time - self.iteration_start_time > self.timeout_duration:

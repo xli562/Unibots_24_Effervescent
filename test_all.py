@@ -1,11 +1,11 @@
-from motor_drive_modules.Event_Handler import Event_Handler
-from motor_drive_modules.Chassis import *
+from modules.Event_Handler import Event_Handler
+from modules.Chassis import *
 import time
 import serial
 
 ser = serial.Serial("/dev/Arduino", 115200)
 
-ultrasound = Ultrasound(ser = ser)
+ultrasound = Ultrasound(arduino_ser = ser)
 lidar = Lidar()
 intake = Intake()
 event_handler = Event_Handler(ser = ser)
@@ -24,7 +24,7 @@ print("Start Measure")
 yaw_rate = chassis.measure_stationary_yaw_drift_rate(5)
 bot.set_beep(100)
 print("Yaw Rate: {}".format(yaw_rate))
-print('IMU gloabl start: {}'.format(chassis.imu_global_start))
+print('IMU gloabl start: {}'.format(chassis.imu_init_angle_offset))
 
 
 index_out = 0

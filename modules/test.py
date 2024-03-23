@@ -54,7 +54,7 @@ print("Start Measure")
 yaw_rate = chassis.measure_stationary_yaw_drift_rate(15)
 bot.set_beep(100)
 print("Yaw Rate: {}".format(yaw_rate))
-print('IMU gloabl start: {}'.format(chassis.imu_global_start))
+print('IMU gloabl start: {}'.format(chassis.imu_init_angle_offset))
 
 
 while True:

@@ -1,5 +1,5 @@
 # from RosmasterBoard import Rosmaster
-from motor_drive_modules.Chassis import *
+from modules.Chassis import *
 import time
 import serial
 
@@ -12,7 +12,7 @@ import serial
 
 ser = serial.Serial("/dev/Arduino", 115200)
 
-ultrasound = Ultrasound(ser=ser)
+ultrasound = Ultrasound(arduino_ser=ser)
 event_handler = Event_Handler(ser=ser)
 lidar = Lidar()
 intake = Intake()
@@ -29,7 +29,7 @@ print("Start Measure")
 yaw_rate = chassis.measure_stationary_yaw_drift_rate(5)
 bot.set_beep(100)
 print("Yaw Rate: {}".format(yaw_rate))
-print('IMU gloabl start: {}'.format(chassis.imu_global_start))
+print('IMU gloabl start: {}'.format(chassis.imu_init_angle_offset))
 
 try:
     chassis.forward()
