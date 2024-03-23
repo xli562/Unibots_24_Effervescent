@@ -34,6 +34,7 @@ print("Start Measure")
 imu_calibration_time = 3 if do_stationary_test else 20
 yaw_rate = chassis.measure_stationary_yaw_drift_rate(imu_calibration_time)
 bot.set_beep(100)
+chassis.imu_init_angle_offset = chassis.get_yaw_calibrated()
 print(f'Yaw Rate: {yaw_rate}')
 print(f'IMU gloabl start: {chassis.imu_init_angle_offset}')
 
