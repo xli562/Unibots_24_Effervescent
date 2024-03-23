@@ -55,13 +55,13 @@ void setup() {
 void loop() {
 
   //------------------------------Ultrasound-------------------------
+  Serial.print("U"); // Identifier for ultrasonic sensor
   for (int i = 0; i < NUM_ULTRASOUND; i++) {
     // Read ultrasonic sensor distance
     delay(35);                      // Wait 50ms between pings (about 20 pings/sec). 29ms should be the shortest delay between pings.
     unsigned int ultrasonic_distance = ultrasound_sensors[i].ping_cm(); // Send ping, get distance in centimeters and print result (0 = outside set distance range)
   
     // Send data over serial with identifiers
-    Serial.print("U"); // Identifier for ultrasonic sensor
     Serial.print(ultrasonic_distance);
     Serial.print(",");
   }
