@@ -88,9 +88,9 @@ def move(direction:str, duration=None,
     
 def distance_to_wall(direction):
     if direction == "f":
-        return (chassis.find_base[1] <  60)
+        return (chassis.find_base()[1] <  45)
     elif direction == "r":
-        return (chassis.find_base[0] <  45)
+        return (chassis.find_base()[0] <  45)
 
 
 
