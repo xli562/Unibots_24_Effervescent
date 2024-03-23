@@ -26,8 +26,8 @@ int power = 0;
 
 // int trigPins[NUM_ULTRASOUND] = {6,2,8,4,10};  //Right_Bottom, Left, Front, Back, Right_Top
 // int echoPins[NUM_ULTRASOUND] = {7,3,9,5,11}; 
-int trigPins[NUM_ULTRASOUND] = {4,12,8,6,10};  //Right_Bottom, Left, Front, Back, Right_Top
-int echoPins[NUM_ULTRASOUND] = {5,3,9,7,11};
+int trigPins[NUM_ULTRASOUND] = {8, 6, 12, 4, 10};  // Front, back, left, right_bottom, right_top
+int echoPins[NUM_ULTRASOUND] = {9, 7, 3, 5, 11};
 
 NewPing ultrasound_sensors[NUM_ULTRASOUND]{
   NewPing(trigPins[0], echoPins[0], MAX_DISTANCE),
@@ -46,7 +46,7 @@ void setup() {
 
   //----------Intake----------
   //   Serial.begin(9600);
-  pinMode(2, INPUT); // Using digital pin 2 for PWM input //NOTE: this pin is used by other one of the ultrasound
+  pinMode(2, INPUT); // Uself._triggered[3]sing digital pin 2 for PWM input //NOTE: this pin is used by other one of the ultrasound
   pinMode(positivePin, OUTPUT);
   pinMode(negativePin, OUTPUT);
   attachInterrupt(digitalPinToInterrupt(2), measurePulse, CHANGE);

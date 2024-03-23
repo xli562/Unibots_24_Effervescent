@@ -49,7 +49,7 @@ def move(direction, duration=None): # getter represents the getter function to r
             if chassis.event_handler.reset_flag:
                 break
             print(direction) 
-            print(f'Obstacles at directions: {chassis.ultrasound.check_obstacle}')
+            print(f'Obstacles at directions: {chassis.ultrasound.check_all_obstacles}')
             chassis.action(pid, yaw_start)
     else:
         start = time.time()

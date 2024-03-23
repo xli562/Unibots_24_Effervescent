@@ -2,22 +2,19 @@ from modules.Chassis import *
 import time
 import serial
 
-ser = serial.Serial("/dev/Arduino", 115200)
+# If we are testing the robot stationary,
+# shorten the wait times for yaw calibration.
 do_stationary_test = True
 
-# Setup
-# bot = Rosmaster()
-# bot.create_receive_threading()
-# bot.set_auto_report_state(enable = True)
-# bot.clear_auto_report_data()
 
-arduino_board = Arduino()
-ultrasound = Ultrasound(arduino_board)
-lidar = Lidar()
-intake = Intake()
-event_handler = EventHandler(arduino_board)
 buzzer = Buzzer()
-chassis = Chassis(ultrasound, lidar, intake, event_handler, buzzer)
+servo = Servo()
+intake = Intake()
+lidar = Lidar(buzzer.beep_pattern)
+arduino_board = Arduino(buzzer.beep_pattern)
+ultrasound = Ultrasound(arduino_board)
+event_handler = EventHandler(arduino_board)
+chassis = Chassis(ultrasound, lidar, intake, event_handler)
 chassis.stop()
 
 
@@ -69,7 +66,7 @@ def move(direction, duration=None, getter=chassis.get_stopping_condition): # get
             if chassis.event_handler.reset_flag:
                 break
             print(direction) 
-            print(f'Obstacles at directions: {chassis.ultrasound.check_obstacle}')
+            print(f'Obstacles at directions: {chassis.ultrasound.check_all_obstacles}')
             chassis.action(pid, yaw_start)
     else:
         start = time.time()
