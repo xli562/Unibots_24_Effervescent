@@ -15,56 +15,40 @@ bot.set_auto_report_state(enable = True)
 bot.clear_auto_report_data()
 
 
-class EventHandler:
-    """ Class to set event flags to break out loops """
-    def __init__(self, ser):
-        self.ser = ser
-        self.reset_flag = False
-        self.timeout_flag = False
-        self.timeout_duration = 30
-        # Track the starting time of current main loop iteration. 
-        # When (current time - this) > timeout_duration, should start returning.
-        self.iteration_start_time = time.time()
-        
-    
-    def check_reset(self):
-        """ Check the Serial. If the message of "!Restart!" 
-        (sent from Arduino) is present, break from the main loop. """
-        
-        # print('restart_point_1')
-        try:
-            if self.ser.in_waiting > 0:
-                data_str = self.ser.readline().strip().decode('utf-8')
-                # print('Received Data: {}'.format(data_str))
-                readings = data_str.split('!')
-                for reading in readings:
-                    if reading == "Restart":  # Command to restart - sent when restart button of Arduino is pressed
-                        print('RESTARTING THE ROBOT')
-                        self.reset_flag = True
-        except Exception as e:
-            print(e)
-    
-    
-    def check_timeout(self):
-        """ Check if the program has been running longer than the specified duration (self.timeout_duration) """
-        current_time = time.time()
-        if current_time - self.iteration_start_time > self.timeout_duration:
-            self.timeout_flag = True
-            # break
-            # 目前还没有加入上面这行的break，后面可以考虑一下这里需不需要这个break
+
+class Buzzer:
+    """ Class to represent the buzzer on the Ros board. """
+
+    def __init__(self):
+        pass
 
 
-    def empty_events(self):
-        """ Empty the event flags """
-        self.reset_flag = False
-        self.timeout_flag = False
+    def beep_pattern(self, pattern:str='...', repeat:int=1):
+        beep_time = 250
+        interval = 20
+        if not all(char in ('.', '-', ' ') for char in pattern):
+            # Indicate the pattern string is in an incorrect format
+            for _ in range(10):
+                bot.set_beep(10)
+                time.sleep(5)
+        else:
+            for _ in range(repeat):
+                for char in pattern:
+                    if char == '.':
+                        bot.set_beep(beep_time)
+                        time.sleep((beep_time + interval)*0.001)
+                    elif char == '-':
+                        bot.set_beep(beep_time * 2)
+                        time.sleep((beep_time * 2 + interval)*0.001)
+                    elif char == ' ':
+                        time.sleep((beep_time + interval)*0.001)
 
 
 
 class Servo:
     """ Class to represent the gripper's servo. """
     
-    def __init__(self, port):
+    def __init__(self, port=1):
         self._port = port
         self._position = 0   # target angular position of servo
         self._grip_position = 150
@@ -199,40 +183,18 @@ class Intake:
 
 
 
-class Buzzer:
-    """ Class to represent the buzzer on the Ros board. """
-
-    def __init__(self):
-        pass
-
-
-    def beep_pattern(self, pattern:str='...', repeat:int=1):
-        beep_time = 250
-        interval = 20
-        if not all(char in ('.', '-', ' ') for char in pattern):
-            # Indicate the pattern string is in an incorrect format
-            for _ in range(10):
-                bot.set_beep(10)
-                time.sleep(5)
-        else:
-            for _ in range(repeat):
-                for char in pattern:
-                    if char == '.':
-                        bot.set_beep(beep_time)
-                        time.sleep((beep_time + interval)*0.001)
-                    elif char == '-':
-                        bot.set_beep(beep_time * 2)
-                        time.sleep((beep_time * 2 + interval)*0.001)
-                    elif char == ' ':
-                        time.sleep((beep_time + interval)*0.001)
-
-
-
 class Lidar:
+    """ Class to represent the lidar.
+    Depends on class Buzzer (slightly) for error reporting. """
+
     _instance = None    # Needed for the __new__() method
 
-    def __init__(self):
+    def __init__(self, beep_pattern):
+        """ Initialise an instance of Lidar.
+        :param beep_pattern: the beeping function from class Buzzer """
+
         self._blocking = False
+        self._beep_pattern = beep_pattern
         # Threads management
         self._threads = []
         self._terminate_all_threads = threading.Event()
@@ -276,9 +238,9 @@ class Lidar:
         def check_reading():
             while not self._terminate_all_threads.is_set():
                 if self._last_reading.size == 0:
+                    print(f'Warning: Not receiving data from Lidar after timeout={timeout} seconds')
                     try:
-                        buzzer = Buzzer()
-                        buzzer.beep_pattern('....  .   .  ', 5)
+                        self._beep_pattern('....-.')
                     except:
                         pass
         thread = threading.Timer(timeout, check_reading)
@@ -557,16 +519,23 @@ class Lidar:
 
 
 class Arduino:
-    """ Class to represent the arduino. Reads ultrasound and reset_button datas. """
+    """ Class to represent the arduino. Reads ultrasound and reset_button datas. 
+    Depends on class Buzzer (slightly) for error reporting. """
 
     _instance = None    # Needed for the __new__() method
 
-    def __init__(self):
+    def __init__(self, beep_pattern):
+        """ Initialises an instance of class Arduino
+        :param beep_pattern: the beeping function from class Buzzer """
         # Serial port
         self._ser = serial.Serial("/dev/Arduino", 115200)
+        self._beep_pattern = beep_pattern
         # Cached accessible readings
-        self._last_ultrasound_readings = None
-        self._flag_received_reset = False
+        self._last_ultrasound_readings = np.array([0., 0., 0., 0., 0.])
+        self.ultrasound_new_reading_available = threading.Event()
+        self.ultrasound_new_reading_available.clear()
+        self.received_reset = threading.Event()
+        self.received_reset.clear()
         # Threads management
         self._threads = []
         self._terminate_all_threads = threading.Event()
@@ -575,7 +544,7 @@ class Arduino:
         
 
     def __new__(cls, *args, **kwargs):
-        """ To prevent the Lidar instance from being created
+        """ To prevent the Arduino instance from being created
         multiple times. """
 
         if not cls._instance:
@@ -590,10 +559,32 @@ class Arduino:
         self._terminate_all_threads.clear()
 
 
-    def test_arduino_receive(self):
+    def _check_connection(self, timeout=5):
+        """ Checks the Arduino connection.
+        If the last reading is still empty after 5 seconds, 
+        buzz the buzzer in a specific pattern if buzzer is connected. 
+        
+        :param timeout: the wait time before checking if arduino returns readings"""
+
+        def check_arduino_reading():
+            while not self._terminate_all_threads.is_set():
+                if self._last_ultrasound_readings.size == 0:
+                    print(f'Warning: Not receiving ultrasound readings from Arduino after timeout={timeout} seconds')
+                    try:
+                        self.buzzer.beep_pattern('.--..')
+                    except:
+                        pass
+        thread = threading.Timer(timeout, check_arduino_reading)
+        self._threads.append(thread)
+        thread.start()
+
+
+    def self_test(self):
         """ Tests the arduino class by 
-        printing out data received from the arduino. """
-        pass
+        printing out (once) data received from the arduino. """
+
+        print(f'_last_ultrasound_readings {self._last_ultrasound_readings}')
+        print(f'_flag_received_reset {self.received_reset}')
 
 
     def _start_scan_serial_thread(self):
@@ -606,39 +597,103 @@ class Arduino:
                     line = raw_line.decode('utf-8')
                     if line.startswith("U"):
                         # Recieved ultrasonic reading
-                        readings = line.split(',')
-                        ####(Max)####
-                        ultrasonic_index = 0
-                        #############
-                        for reading in readings:
-                            # splitted_readings = reading.split(':') # e.g. [U1, 50]
-                            # ultrasonic_distance = int(splitted_readings[1]) # e.g. 50
-                            ####(Max)####
-                            # ultrasonic_index = int(splitted_readings[0][1]) # e.g. 1
-                            self.update_distance(ultrasonic_distance, ultrasonic_index)
-                            ultrasonic_index += 1
-                            #############
-                            print(splitted_readings)
+                        readings_str = line.split(',')
+                        self._last_ultrasound_readings = np.array([int(reading) for reading in readings_str])
+                        self.ultrasound_new_reading_available = True
                     elif line.startswith("R"):
-                        self._flag_received_reset = True
+                        self.received_reset = True
                 except Exception as e:
-                    print(e)
+                    print(f'Exception while listening serial from Arduino: \n{e}')
         thread = threading.Thread(target=listen_serial)
         self._threads.append(thread)
         thread.start()
 
-    def update_distance(self, distance, sensor_index):
-        self._distances[sensor_index] = distance
-        if (distance < 30 and distance > 0):
-            self.obstacle_trigger_count[sensor_index] += 1
-        else:
-            self.obstacle_trigger_count[sensor_index] = 0
 
-    def get_distances(self):
-        if (self.updated):
-            return self._distances
-        else:
-            self.receive_distances()
+    def get_last_ultrasound_readings(self) -> np.ndarray:
+        """ Returns last ultrasound readings read from arduino via serial """
+        self.ultrasound_new_reading_available.clear()
+        return self._last_ultrasound_readings
+
+
+
+class Ultrasound:
+    """ Class that reads ultrasound sensors from Arduino and identifies obstacles.
+    Depends on class Arduino. """
+
+    _instance = None    # Needed for the __new__() method
+
+    def __init__(self, new_reading_available_event, 
+                 get_last_ultrasound_readings, threashold_distance=20, 
+                 validation_count=2):
+        """ 
+        :param new_reading_available_event: The event that indicates new 
+            reading is available from class Arduino
+        :param get_last_ultrasound_readings: Function to get the last 
+            ultrasound readings from class Arduino
+        :param threashold_distance: threashold for obstacle detection in cm 
+        :param validation_count: how many times the threashold is met before
+            we assume there is an obstacle. To avoid reading fluxuations 
+            of the sensor. """
+
+        self._detection_threashold = threashold_distance
+        self._validation_count = validation_count
+        self._get_last_ultrasound_readings = get_last_ultrasound_readings
+        self._new_reading_available_event = new_reading_available_event
+        # Cached accessible readings
+        # Right_Bottom, Left, Front, Back, Right_Top
+        self._triggered = np.array([0, 0, 0, 0])
+        # Robust triggering
+        # 代表了连续几次iteration检测到了obstacle，为了避免随机触发
+        self._detection_count = np.array([0, 0, 0, 0])
+        self.rugby_trigger_count = 0 # 同理，代表连续几次检测到了rugby
+        # Threads management
+        self._threads = []
+        self._terminate_all_threads = threading.Event()
+        self._terminate_all_threads.clear()
+        self._start_read_distances_thread()
+        
+
+    def __new__(cls, *args, **kwargs):
+        """ To prevent the Ultrasound instance from being created
+        multiple times. """
+
+        if not cls._instance:
+            cls._instance = super(Ultrasound, cls).__new__(cls, *args, **kwargs)
+        return cls._instance
+
+
+    def __del__(self):
+        self._terminate_all_threads.set()
+        for thread in self._threads:
+            thread.join()
+        self._terminate_all_threads.clear()
+    
+
+    def _start_read_distances_thread(self):
+        """ Creates thread to read ultrasound distances read from class Arduino """
+
+        def read_distances():
+            while not self._terminate_all_threads.is_set():
+                # Wait for a new reading to become available
+                self._new_reading_available_event.wait()
+                distances:np.ndarray = self._get_last_ultrasound_readings()
+                i = 0
+                for distance in distances[:-1]: # [:-1] is to neglect the rugby detector
+                    if distance <= self._detection_threashold:
+                        # Increment detection_count for the direction 
+                        # if reading is within threashold.
+                        self._detection_count[i] += 1
+                    else:
+                        # Clear detection_count for the direction 
+                        # if reading is larger than threashold.
+                        self._detection_count[i] = 0
+                    i += 1
+                # FIXME: Not sure if sensitive to float division errors
+                self._triggered = np.floor(self._detection_count / self._validation_count)
+        thread = threading.Thread(target=read_distances)
+        self._threads.append(thread)
+        thread.start()
+            
 
     def detect_rugby(self):
         # TODO: under construction
@@ -649,63 +704,95 @@ class Arduino:
             self.rugby_trigger_count = 0
 
 
-    @property
+    def self_test(self):
+        """ Prints ultrasound readings once for testing """
+        print(self._get_last_ultrasound_readings())
+
+
     def rugby_right(self):
         if (self.updated):
             return (self.rugby_trigger_count >= 5)
             # return (self.distances[4] - self.distances[0]) >= 5
             # rugby_left is True when the difference between top and bottom sensor > 5cm
 
-    @property
-    def object_left(self):
-        return (self.obstacle_trigger_count[1] >= 2)
-        # return (self.distances[4] < 10 and self.distances[4] > 0)
-        # when object detected within 10cm, object detected
 
-    @property
-    def object_right(self):
-        return (self.obstacle_trigger_count[4] >= 2)
-        # return (self.distances[1] < 10 and self.distances[1] > 0)
-        # when object detected within 10cm, object detected
+    def check_obstacle(self, direction:str) -> bool:
+        """ Determines whether the robot should start.
+
+        :param direction: moving direction the robot
+        :return: boolean value depending on if there is 
+            an obstacle in the moving direction """
+        
+        if direction == 'f':
+            return self._triggered[0]
+        elif direction == 'b':
+            return self._triggered[3]
+        elif direction == 'r':
+            return self._triggered[3]
+        elif direction == 'l':
+            return self._triggered[3]
+        else:
+            return self._triggered[0]
+        
+
+    def check_all_obstacles(self) -> np.ndarray:
+        return self._triggered
+
+
+
+class EventHandler:
+    """ Class to set event flags to break out loops.
+    Depends on class Arduino. """
+
+    def __init__(self, received_reset:threading.Event, timeout_duration=30):
+        """ 
+        :param received_reset: event that indicates the arduino board is reset, 
+            from class Arduino """
+        
+        self._received_reset = received_reset
+        self._timeout_duration = timeout_duration
+        # Flags
+        self.reset_flag = False
+        self.timeout_flag = False
+        # Track the starting time of current main loop iteration. 
+        # When (current time - this) > timeout_duration, should start returning.
+        self.iteration_start_time = time.time()
+        
     
-    @property
-    def object_front(self):
-        return (self.obstacle_trigger_count[2] >= 1)
-        # return (self.distances[2] < 10 and self.distances[2] > 0)
-        # when object detected within 10cm, object detected
+    def check_reset(self):
+        """ Check the Serial. If received "R" 
+        (sent from Arduino) is present, break from the main loop. """
+        
+        # print('restart_point_1')
+        if self._received_reset.is_set():
+            print('RESTARTING THE ROBOT')
+            self.reset_flag = True
     
-    @property
-    def object_back(self):
-        return (self.obstacle_trigger_count[3] >= 1)
-        # return (self.distances[3] < 10 and self.distances[3] > 0)
-        # when object detected within 10cm, object detected
+    
+    def check_timeout(self):
+        """ Check if the program has been running longer than the 
+        specified duration (self.timeout_duration) """
 
-    @property
-    def check_obstacle(self):
-        obstacle = []
-        for i in range(1,5):
-            if self._distances[i] < 20 and self._distances[i] > 0:
-                obstacle.append(i)
-        return obstacle
+        current_time = time.time()
+        if current_time - self.iteration_start_time > self._timeout_duration:
+            self.timeout_flag = True
+            # break
+            # 目前还没有加入上面这行的break，后面可以考虑一下这里需不需要这个break
 
 
+    def empty_events(self):
+        """ Empty the event flags """
 
-class Ultrasound:
-    """ Class that reads ultrasound sensors from Arduino and identifies obstacles """
-
-    def __init__(self):
-        # Cached accessible readings
-        # Right_Bottom, Left, Front, Back, Right_Top
-        self._distances = np.array([0., 0., 0., 0., 0.])
-        # Robust triggering
-        self.obstacle_trigger_count = [0] * 5 #代表了连续几次iteration检测到了obstacle，为了避免随机触发
-        self.rugby_trigger_count = 0 #同理，代表连续几次检测到了rugby
+        self.reset_flag = False
+        self.timeout_flag = False
 
 
 
 class Chassis:
     """ Class that defines the basic motion of chassis """
-    def __init__(self, ultrasound:Arduino, lidar:Lidar, intake:Intake, event_handler:EventHandler, buzzer:Buzzer) -> None:
+
+    def __init__(self, beep_pattern, intake:Intake, lidar:Lidar, 
+                 event_handler:EventHandler):
         self.vx = 0
         self.vy = 0
         self.vz = 0
@@ -714,96 +801,65 @@ class Chassis:
         self.time_global_start = time.time()
         self.imu_init_angle_offset = bot.get_imu_attitude_data()[2]
         self.turn_num = 0
-        self.intake = intake
-        self.ultrasound = ultrasound
-        self.lidar = lidar
-        self.event_handler = event_handler
-        self.buzzer = buzzer
 
-    def get_stopping_condition(self,direction):
-        """ Determines whether the robot should start.
-        :param direction: moving direction the robot
-        :return: boolean value depending on if there is an obstacle in the movin direction """
-        if direction == 'f':
-            return self.ultrasound.object_front
-        elif direction == 'b':
-            return self.ultrasound.object_back
-        elif direction == 'r':
-            return self.ultrasound.object_right
-        elif direction == 'l':
-            return self.ultrasound.object_left
-        else:
-            return self.ultrasound.object_front
-            
-    def measure_stationary_yaw_drift_rate(self, duration, plot=False):
+        self._beep_pattern = beep_pattern
+        self._intake = intake
+        self._lidar = lidar
+        self.event_handler = event_handler
+
+
+    def measure_stationary_yaw_drift_rate(self, duration:int, plot=False):
         """ Measures the rate of drift in z-direction (yaw rate) 
-        :param duration: duration of measurement
-        :return: yaw_rate: the rate of drift in yaw """
+
+        :param duration: duration of measurement in seconds (integer)
+        :return: yaw angle drift rate in degrees per second """
+
         yaws=[]
         times=[]
         self.imu_init_angle_offset = bot.get_imu_attitude_data()[2]
 
-        start = time.time()
-        roll, pitch, yaw = bot.get_imu_attitude_data()
-        end = time.time()
+        start_time = time.time()
+        yaw = bot.get_imu_attitude_data()[2]
+        end_time = time.time()
         
-        while end - start < duration:
-            end = time.time()
-            roll_end, pitch_end, yaw_end = bot.get_imu_attitude_data()
+        while end_time - start_time < duration:
+            end_time = time.time()
+            yaw_end = bot.get_imu_attitude_data()[2]
             if plot:
-                times.append(end-start)
+                times.append(end_time-start_time)
                 yaws.append(yaw_end)
 
         if plot:
             plt.plot(times,yaws)
             plt.savefig('plt_no_offset.png')
         
-        yaw_rate = (yaw_end - yaw)/(end-start)
+        yaw_rate = (yaw_end - yaw)/(end_time-start_time)
         if yaw_rate == 0:
-            # self.buzzer.beep_pattern('. .')
             print('IMU IS NOT READING')
+            try:
+                self._beep_pattern('-....')
+            except:
+                pass
 
         self.yaw_rate = yaw_rate
 
         return yaw_rate
 
-    # Not needed
-    def get_imu_after_calibration(self, yaw_rate, duration, plot=False):
-        """ Testing function, not needed """
-
-        yaws=[]
-        times=[]
-
-        start = time.time()
-        roll, pitch, yaw = bot.get_imu_attitude_data()
-        yaw = yaw - (time.time() - self.time_global_start)*yaw_rate
-        end = time.time()
-        
-        while end - start < duration:
-            end = time.time()
-            roll_end, pitch_end, yaw_end = bot.get_imu_attitude_data()
-            yaw_end = yaw_end - (time.time() - self.time_global_start)*yaw_rate
-
-            if plot:
-                times.append(end-start)
-                yaws.append(yaw_end)
-        if plot:
-            plt.plot(times,yaws)
-            plt.savefig('plt_with_offset.png')
     
     def get_yaw_calibrated(self):
         """ Calibrate yaw readings. 
-        :return: yaw: calibrated yaw """
+        :return: calibrated yaw """
+
         t = time.time()
-        _, _, yaw = bot.get_imu_attitude_data()
-        # print('Yaw Before Calibration: {}'.format(yaw))
-        yaw = yaw - (t - self.time_global_start)*self.yaw_rate
-        # print('Yaw After Calibration: {}'.format(yaw))
+        yaw = bot.get_imu_attitude_data()[2]
+        yaw = yaw - (t - self.time_global_start) * self.yaw_rate
         return yaw
+
 
     def action(self, controller, yaw_start):
         """ Set motion of robot with PID control. 
         :param controller: a simple-pid PID controller, yaw_start: initial yaw angle """
+        
         self.event_handler.check_reset() ###
         yaw = self.get_yaw_calibrated()
         control = controller(yaw)
@@ -811,163 +867,25 @@ class Chassis:
         self.vz = max(-10, min(control, 10))
         # print("Error: {}, Control: {}, Vz: {}".format(error, control, self.vz))
         bot.set_car_motion(self.vx, self.vy, self.vz)
-        self.intake.eat()
+        self._intake.eat()
         # time.sleep(0.05)
 
-    def forward(self, duration = None):
-        """ Original function for moving forward. """
-        print('Chassis Foward Checkpoint 1')
-        yaw_start = self.get_yaw_calibrated()
-        pid_forward = PID(0.5,0,0.1, setpoint=yaw_start)
-        self.vx = 0.2
-        self.vy = 0
-        if duration is None:
-            while not(self.ultrasound.object_front):
-                try:
-                    self.ultrasound.receive_distances()
-                    distances = self.ultrasound.get_distances()  
-                    print("Distances:", distances)
-                    # print("Obstacles at directions: {}".format(self.ultrasound.check_obstacle))
 
-                    self.action(pid_forward, yaw_start)
-
-                except KeyboardInterrupt:
-                    self.stop()
-                    break
-        else:
-            start = time.time()
-            end = time.time()
-            while (end - start < duration) and not(self.ultrasound.object_front):
-                end = time.time()
-                self.ultrasound.receive_distances()
-                distances = self.ultrasound.get_distances()  
-                print("Distances:", distances)
-                print("Obstacles at directions: {}".format(self.ultrasound.check_obstacle))
-                self.action(pid_forward, yaw_start)
-        self.stop()
-                      
-    def backward(self, duration = None):
-        """ Original function for moving backward. """
-        yaw_start = self.get_yaw_calibrated()
-        pid_backward = PID(0.5,0,0.1, setpoint=yaw_start)
-        self.vx = -0.2
-        self.vy = 0
-        if duration is None:
-            while not(self.ultrasound.object_back):
-                try:
-                    self.ultrasound.receive_distances()
-                    distances = self.ultrasound.get_distances()  
-                    print("Distances:", distances)
-                    print("Obstacles at directions: {}".format(self.ultrasound.check_obstacle))
-                    self.action(pid_backward, yaw_start)
-                except KeyboardInterrupt:
-                    self.stop()
-                    break
-        else:
-            start = time.time()
-            end = time.time()
-            while (end - start < duration) and not(self.ultrasound.object_back):
-                end = time.time()
-                self.ultrasound.receive_distances()
-                distances = self.ultrasound.get_distances()  
-                print("Distances:", distances)
-                print("Obstacles at directions: {}".format(self.ultrasound.check_obstacle))
-                self.action(pid_backward, yaw_start)
-        self.stop()
-    
-    def right(self, duration = None):
-        """ Original function for moving to the right. """
-        yaw_start = self.get_yaw_calibrated()
-        pid_right = PID(0.05, 0, 0.05, setpoint=yaw_start)
-        self.vx = 0
-        self.vy = 0.2
-        if duration == None:
-            while not(self.ultrasound.object_right):
-                try:
-                    self.ultrasound.receive_distances()
-                    self.action(pid_right, yaw_start)
-                except KeyboardInterrupt:
-                    self.stop()
-                    break
-        else:
-            start = time.time()
-            end = time.time()
-            while (end - start < duration) and not(self.ultrasound.object_right):
-                self.ultrasound.receive_distances()
-                end = time.time()
-                self.action(pid_right, yaw_start)
-        self.stop()
-        
-    def left(self, duration = None):
-        """ Original function for moving to the left. """
-        yaw_start = self.get_yaw_calibrated()
-        pid_left = PID(0.2, -0.5, 0.01, setpoint=yaw_start)
-        self.vx = 0
-        self.vy = -0.2
-        if duration == None:
-            while not(self.ultrasound.object_left):
-                try:
-                    self.ultrasound.receive_distances()
-                    self.action(pid_left, yaw_start)
-                except KeyboardInterrupt:
-                    self.stop()
-                    break
-        else:
-            start = time.time()
-            end = time.time()
-            while (end - start < duration) and not(self.ultrasound.object_left):
-                self.ultrasound.receive_distances()
-                end = time.time()
-                self.action(pid_left, yaw_start)
-        self.stop()
-    
-    def turn(self, angle):
-        """ Original function for turning an angle. """
-        yaw_start = self.get_yaw_calibrated()
-        pid_turn = PID(0.07, 0, 0.03, setpoint = yaw_start + angle)
-        self.vx = 0
-        self.vy = 0
-        yaw = yaw_start
-        previous_yaw = yaw_start
-        while abs(yaw_start + angle - yaw) > 1:
-            try:
-                yaw = self.get_yaw_calibrated()
-                if (yaw-previous_yaw) > 300:
-                    yaw -= 360
-                elif (yaw-previous_yaw) < -300:
-                    yaw += 360
-                previous_yaw = yaw
-                error = yaw_start + angle - yaw 
-                control = pid_turn(yaw)
-                self.vz = max(-10, min(control, 10))
-                print("Error: {}, Control: {}, Vz: {}".format(error, control, self.vz))
-                bot.set_car_motion(self.vx, self.vy, self.vz)
-                # self.intake.set_eat_power()
-                time.sleep(0.1)
-            except KeyboardInterrupt:
-                self.stop()
-                break
-
-        ######
-        if (angle < 0): #Assuming turns can only be +90 or -90
-            self.turn_num -= 1  
-        else:
-            self.turn_num += 1
-
-        self.stop()    
-    
     def stop(self):
-        """ Stop robot motion """
+        """ Stop all wheels and intake. """
+
         bot.set_car_motion(0, 0 ,0)
-        self.intake.set_free_drive()
+        self._intake.set_free_drive()
+
 
     # May not need
     def find_base(self):
         """ Find base from current heading. 
         :return: point: coordinate of base w.r.t robot """
+        
         # Input: 4 sets of xy coordinates - points
         # Might have to make Lidar an attribute of Chassis Class, and call methods of Lidar
-        points = self.lidar.get_last_arena_vertices()        
+        points = self._lidar.get_last_arena_vertices()        
         if self.turn_num % 4 == 0: # Base in Quadrant 3
             for point in points:
                 if point[0] < 0 and point[1] < 0:
@@ -986,6 +904,7 @@ class Chassis:
                     return point
         print('Base:', point)
     
+
     def revert_orientation(self):
         """ Align the orientation of the robot for returning. """
         num = self.turn_num - 2
@@ -997,7 +916,7 @@ class Chassis:
             for i in range((num-2)%4):
                 self.turn(-90)
                 time.sleep(0.5)
-        shift = self.lidar.get_last_angle_error()
+        shift = self._lidar.get_last_angle_error()
         self.turn(-shift)
 
 
