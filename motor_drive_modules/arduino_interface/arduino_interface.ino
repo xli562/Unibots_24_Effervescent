@@ -5,7 +5,7 @@
 */
 
 //----------Intake----------
-#define positivePin 12
+#define positivePin 14 // 14 represents A0 analogue pin
 #define negativePin 13
 
 volatile unsigned long pulseHighTime = 0;
