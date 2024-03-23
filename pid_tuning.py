@@ -17,6 +17,52 @@ lidar = Lidar()
 intake = Intake()
 buzzer = Buzzer()
 
+def move(direction, duration=None): # getter represents the getter function to retrieve stoping condition from ultrasound
+    yaw_start = chassis.get_yaw_calibrated()
+    if direction == 'f':
+        # yaw_start = chassis.get_yaw_calibrated()
+        pid = PID(0.5,0,0.1, setpoint=yaw_start)
+        chassis.vx = 0.2
+        chassis.vy = 0
+    elif direction == 'b':
+        # yaw_start = chassis.get_yaw_calibrated()
+        pid = PID(0.5,0,0.1, setpoint=yaw_start)
+        chassis.vx = -0.2
+        chassis.vy = 0
+    elif direction == 'l':
+        # yaw_start = chassis.get_yaw_calibrated()
+        pid = PID(0.2, -0.5, 0.01, setpoint=yaw_start)
+        chassis.vx = 0
+        chassis.vy = -0.2
+    elif direction == 'r':
+        # yaw_start = chassis.get_yaw_calibrated()
+        pid = PID(0.05, 0, 0.05, setpoint=yaw_start)
+        chassis.vx = 0
+        chassis.vy = 0.2
+    else:
+        raise Exception(f'Direction has to be "f", "b", "l" or "r", got {direction}.')
+
+    if duration is None:
+        while not(chassis.event_handler.reset_flag): ####(Max)#### Added the chassis.event_handler.reset_flag
+            chassis.ultrasound.receive_distances()
+            chassis.event_handler.check_reset()
+            if chassis.event_handler.reset_flag:
+                break
+            print(direction) 
+            print(f'Obstacles at directions: {chassis.ultrasound.check_obstacle}')
+            chassis.action(pid, yaw_start)
+    else:
+        start = time.time()
+        end = time.time()
+        while (end - start < duration) and not(chassis.event_handler.reset_flag):  ####(Max)#### Added the chassis.event_handler.reset_flag
+            end = time.time()
+            chassis.ultrasound.receive_distances()
+            chassis.action(pid, yaw_start)
+
+    chassis.stop()
+    
+
+
 print('Program Start with a sleep of 15 seconds')
 #time.sleep(15)
 bot.set_beep(100)
@@ -31,7 +77,7 @@ print("Yaw Rate: {}".format(yaw_rate))
 print('IMU gloabl start: {}'.format(chassis.imu_init_angle_offset))
 
 try:
-    chassis.forward()
+    move('f')
     #time.sleep(0.2)
     #chassis.right()
     #time.sleep(0.2)
