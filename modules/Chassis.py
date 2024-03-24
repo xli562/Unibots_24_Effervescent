@@ -871,18 +871,22 @@ class Chassis:
         return yaw
 
 
-    def action(self, controller, yaw_start):
+    def action(self, controller, yaw_start, eat = True):
         """ Set motion of robot with PID control. 
         :param controller: a simple-pid PID controller, yaw_start: initial yaw angle """
         
         self.event_handler.check_reset() ###
         yaw = self.get_yaw_calibrated()
-        control = controller(yaw)
-        error = yaw_start - yaw 
-        self.vz = max(-10, min(control, 10))
+        # The following three lines is commented out for Main_3.py (Max)
+        # control = controller(yaw)
+        # error = yaw_start - yaw 
+        # self.vz = max(-10, min(control, 10))
         # print("Error: {}, Control: {}, Vz: {}".format(error, control, self.vz))
         bot.set_car_motion(self.vx, self.vy, self.vz)
-        self._intake.eat()
+        if eat:
+            self._intake.eat()
+        else:
+            self._intake.unload()
         # time.sleep(0.05)
 
 

@@ -4,7 +4,7 @@ import serial
 
 # If we are testing the robot stationary,
 # shorten the wait times for yaw calibration.
-do_stationary_test = True
+do_stationary_test = False
 
 
 buzzer = Buzzer()
@@ -30,7 +30,7 @@ bot.set_beep(100)
 
 
 print("Start Measure")
-imu_calibration_time = 5 if do_stationary_test else 20
+imu_calibration_time = 5 if do_stationary_test else 3
 yaw_rate = chassis.measure_stationary_yaw_drift_rate(imu_calibration_time)
 bot.set_beep(100)
 chassis.imu_init_angle_offset = chassis.get_yaw_calibrated()
@@ -38,7 +38,8 @@ print(f'Yaw Rate: {yaw_rate}')
 print(f'IMU gloabl start: {chassis.imu_init_angle_offset}')
 
 def move(direction:str, duration=None, 
-         check_obstacle=ultrasound.check_obstacle): 
+         check_obstacle=ultrasound.check_obstacle,
+         eat = True): 
     """
     :param check_obstacle: the getter function to retrieve stoping 
         condition from ultrasound """
@@ -48,21 +49,25 @@ def move(direction:str, duration=None,
         pid = PID(0, 0, 0, setpoint=yaw_start) # 0.5, 0, 0.1
         chassis.vx = 0.2
         chassis.vy = 0
+        chassis.vz = 0
     elif direction == 'b':
         # yaw_start = chassis.get_yaw_calibrated()
         pid = PID(0, 0, 0, setpoint=yaw_start)
         chassis.vx = -0.2
         chassis.vy = 0
+        chassis.vz = 0
     elif direction == 'l':
         # yaw_start = chassis.get_yaw_calibrated()
         pid = PID(0, 0, 0, setpoint=yaw_start)
         chassis.vx = 0
         chassis.vy = -0.2
+        chassis.vz = 0.02
     elif direction == 'r':
         # yaw_start = chassis.get_yaw_calibrated()
         pid = PID(0, 0, 0, setpoint=yaw_start) # 0.05, 0, 0.05
         chassis.vx = 0
         chassis.vy = 0.2
+        chassis.vz = -0.02
     else:
         raise Exception(f'Direction has to be "f", "b", "l" or "r", got {direction}.')
 
@@ -77,16 +82,17 @@ def move(direction:str, duration=None,
                 break
             # print(direction) 
             # print(f'Obstacles at directions: {chassis._ultrasound.check_all_obstacles()}')
-            chassis.action(pid, yaw_start)
+            chassis.action(pid, yaw_start, eat = eat)
     else:
         start = time.time()
         end = time.time()
         while (end - start < duration) and not(check_obstacle(direction)) and not(chassis.event_handler.reset_flag) and not(chassis.event_handler.timeout_flag):  ####(Max)#### Added the chassis.event_handler.reset_flag
             end = time.time()
-            chassis.action(pid, yaw_start)
+            chassis.action(pid, yaw_start, eat = eat)
 
     chassis.stop()
-    
+
+
 def distance_to_wall(direction):
     if direction == "b":
         return (chassis.find_base_no_turn_version()[1] >  -45)
@@ -172,18 +178,36 @@ while True:
 
     # return loop
     if (chassis.event_handler.timeout_flag) and not(chassis.event_handler.reset_flag):
-
+        print("Returning to scoring zone")
+        # chassis.event_handler.empty_events()
+        # chassis.event_handler.iteration_start_time = time.time()
         while not ultrasound.check_obstacle("b") or not ultrasound.check_obstacle("l"):
+            chassis.event_handler.empty_events()
+            chassis.event_handler.iteration_start_time = time.time()
             if not ultrasound.check_obstacle("b"):
+                print('Back')
                 move('b')
                 if chassis.event_handler.reset_flag and chassis.event_handler.timeout_flag:
                     chassis.stop()
                     break
             if not ultrasound.check_obstacle("l"):
+                print('Left')
                 move('l')
                 if chassis.event_handler.reset_flag and chassis.event_handler.timeout_flag:
                     chassis.stop()
                     break
+        time.sleep(3)
+        chassis._intake.unload()
+        start_unload = time.time()
+        end_unload = time.time()
+
+        while end_unload - start_unload < 8:
+            move('f',0.2, eat=False)
+            time.sleep(0.1)
+            move('b',0.2, eat=False)
+            time.sleep(0.1)
+            end_unload = time.time()
+        time.sleep(5)
         iteration += 1
 
         

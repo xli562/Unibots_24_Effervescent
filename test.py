@@ -4,7 +4,7 @@ import serial
 
 # If we are testing the robot stationary,
 # shorten the wait times for yaw calibration.
-do_stationary_test = True
+do_stationary_test = False
 
 
 buzzer = Buzzer()
@@ -30,7 +30,7 @@ bot.set_beep(100)
 
 
 print("Start Measure")
-imu_calibration_time = 5 if do_stationary_test else 20
+imu_calibration_time = 5 if do_stationary_test else 5
 yaw_rate = chassis.measure_stationary_yaw_drift_rate(imu_calibration_time)
 bot.set_beep(100)
 chassis.imu_init_angle_offset = chassis.get_yaw_calibrated()
@@ -48,21 +48,25 @@ def move(direction:str, duration=None,
         pid = PID(0, 0, 0, setpoint=yaw_start) # 0.5, 0, 0.1
         chassis.vx = 0.2
         chassis.vy = 0
+        chassis.vz = 0
     elif direction == 'b':
         # yaw_start = chassis.get_yaw_calibrated()
         pid = PID(0, 0, 0, setpoint=yaw_start)
         chassis.vx = -0.2
         chassis.vy = 0
+        chassis.vz = 0
     elif direction == 'l':
         # yaw_start = chassis.get_yaw_calibrated()
         pid = PID(0, 0, 0, setpoint=yaw_start)
         chassis.vx = 0
         chassis.vy = -0.2
+        chassis.vz = 0.02
     elif direction == 'r':
         # yaw_start = chassis.get_yaw_calibrated()
         pid = PID(0, 0, 0, setpoint=yaw_start) # 0.05, 0, 0.05
         chassis.vx = 0
         chassis.vy = 0.2
+        chassis.vz = -0.02
     else:
         raise Exception(f'Direction has to be "f", "b", "l" or "r", got {direction}.')
 
@@ -130,17 +134,18 @@ def turn(angle): # -ve for clockwise, +ve for anticlockwise
 
     chassis.stop()    
 
-
+chassis.event_handler.empty_events()
+chassis.event_handler.iteration_start_time = time.time()
 # Main Loop
-move("f",10)
+# move("f",10)
 # time.sleep(0.2)
 # move("b",10)
 # time.sleep(0.2)
-# move("l",10)
-# time.sleep(0.2)
+move("l",10)
+time.sleep(0.2)
 # move("r",10)
-# time.sleep(0.2)
-# turn(90)
+# time.sleep(0.2)1qqqqqqqqqqqqqq
+# turn(90)qasssssssssssssswwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwddddddddddddddddddddddddddddddwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 # time.sleep(0.2)
 # turn(-90)
 
