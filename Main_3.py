@@ -132,11 +132,12 @@ def turn(angle): # -ve for clockwise, +ve for anticlockwise
 
 
 # Main Loop
+iteration = 1
 while True:
+    if event_handler.reset_flag:
+        iteration = 1
     chassis.event_handler.empty_events()
     chassis.event_handler.iteration_start_time = time.time()
-
-    iteration = 1
 
     # Moving right a little bit to start with
     if not chassis.event_handler.timeout_flag:
