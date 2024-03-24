@@ -630,7 +630,7 @@ class Ultrasound:
 
     def __init__(self, new_reading_available_event, 
                  get_last_ultrasound_readings, threashold_distance=20, 
-                 validation_count=5):
+                 validation_count=3):
         """ 
         :param new_reading_available_event: The event that indicates new 
             reading is available from class Arduino
@@ -688,7 +688,7 @@ class Ultrasound:
                 # print(f'distances{distances}')
                 i = 0
                 for distance in distances[:-1]: # [:-1] is to neglect the rugby detector
-                    if distance <= self._detection_threashold:
+                    if distance <= self._detection_threashold and distance > 0:
                         # Increment detection_count for the direction 
                         # if reading is within threashold.
                         self._detection_count[i] += 1
@@ -919,6 +919,11 @@ class Chassis:
                     return point
         print('Base:', point)
     
+    def find_base_no_turn_version(self):
+        points = self._lidar.get_last_arena_vertices()
+        for point in points:
+            if point[0] < 0 and point[1] < 0:
+                return point
 
     def revert_orientation(self):
         """ Align the orientation of the robot for returning. """
